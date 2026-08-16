@@ -4,7 +4,7 @@ import { forwardRef } from "react";
 import type { ButtonHTMLAttributes } from "react";
 import clsx from "clsx";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "danger-solid" | "dark";
 export type ButtonSize = "sm" | "md";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -18,8 +18,9 @@ const variantClasses: Record<ButtonVariant, string> = {
   secondary:
     "bg-surface text-text border border-border hover:bg-surface-hover",
   ghost: "bg-transparent text-text-muted hover:bg-surface-hover hover:text-text",
-  danger:
-    "bg-transparent text-danger border border-border hover:bg-surface-hover",
+  danger: "bg-transparent text-danger hover:bg-danger/10",
+  "danger-solid": "bg-danger text-white hover:opacity-90 disabled:hover:opacity-100",
+  dark: "bg-text text-bg hover:opacity-90 disabled:hover:opacity-100",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {

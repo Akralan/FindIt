@@ -213,8 +213,25 @@ export function DocumentModal({ documentId, onClose, onChanged, onDeleted }: Doc
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={document?.currentName ?? (loading ? "Chargement..." : "Document")}
+      ariaLabel={document?.currentName ?? "Document"}
       maxWidthClassName="max-w-2xl"
+      title={
+        document ? (
+          <>
+            <div className="flex items-center gap-2.5">
+              <Badge variant={document.status === "pending_review" ? "warning" : "success"}>
+                {document.status === "pending_review" ? "À valider" : "Validé"}
+              </Badge>
+              <span className="truncate font-mono text-xs text-text-faint">{document.originalName}</span>
+            </div>
+            <h2 className="mt-2 truncate text-lg font-semibold leading-[26px] tracking-tight text-text">
+              {document.currentName}
+            </h2>
+          </>
+        ) : (
+          <h2 className="text-lg font-semibold text-text">{loading ? "Chargement..." : "Document"}</h2>
+        )
+      }
       footer={
         document ? (
           confirmingDelete ? (
@@ -226,34 +243,26 @@ export function DocumentModal({ documentId, onClose, onChanged, onDeleted }: Doc
                 <Button variant="secondary" size="sm" onClick={() => setConfirmingDelete(false)} disabled={deleting}>
                   Annuler
                 </Button>
-                <Button variant="danger" size="sm" isLoading={deleting} onClick={handleDelete}>
+                <Button variant="danger-solid" size="sm" isLoading={deleting} onClick={handleDelete}>
                   Confirmer la suppression
                 </Button>
               </div>
             </div>
           ) : (
             <>
-              <Button
-                variant="ghost"
-                size="sm"
-                isLoading={undoing}
-                disabled={busy}
-                onClick={handleUndo}
-                className="mr-auto"
-              >
-                Annuler la dernière modification
-              </Button>
               <Button variant="danger" size="sm" disabled={busy} onClick={() => setConfirmingDelete(true)}>
                 Supprimer
               </Button>
-              <Button variant="secondary" size="sm" isLoading={saving} disabled={busy} onClick={handleSave}>
-                Enregistrer
-              </Button>
-              {document.status === "pending_review" && (
-                <Button variant="primary" size="sm" isLoading={validating} disabled={busy} onClick={handleValidate}>
-                  Valider
+              <div className="ml-auto flex items-center gap-2.5">
+                <Button variant="secondary" size="sm" isLoading={saving} disabled={busy} onClick={handleSave}>
+                  Enregistrer
                 </Button>
-              )}
+                {document.status === "pending_review" && (
+                  <Button variant="primary" size="sm" isLoading={validating} disabled={busy} onClick={handleValidate}>
+                    Valider
+                  </Button>
+                )}
+              </div>
             </>
           )
         ) : undefined
@@ -268,16 +277,7 @@ export function DocumentModal({ documentId, onClose, onChanged, onDeleted }: Doc
       )}
 
       {!loading && document && (
-        <div className="flex flex-col gap-5">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant={document.status === "pending_review" ? "muted" : "success"}>
-              {document.status === "pending_review" ? "À valider" : "Confirmé"}
-            </Badge>
-            <span className="text-xs text-text-muted">
-              Nom d&apos;origine : {document.originalName}
-            </span>
-          </div>
-
+        <div className="flex flex-col gap-[22px]">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Input
               label="Nom du fichier"
@@ -292,33 +292,38 @@ export function DocumentModal({ documentId, onClose, onChanged, onDeleted }: Doc
           </div>
 
           {document.summary && (
-            <div>
-              <p className="mb-1 text-sm font-medium text-text">Résumé</p>
-              <p className="text-sm text-text-muted">{document.summary}</p>
+            <div className="flex flex-col gap-1.5">
+              <p className="text-[13px] font-medium text-text">Résumé</p>
+              <p className="text-sm leading-[22px] text-text-muted">{document.summary}</p>
             </div>
           )}
 
-          <Button variant="secondary" size="sm" isLoading={revealing} onClick={handleReveal}>
-            Ouvrir dans l&apos;Explorateur
-          </Button>
+          <div className="grid grid-cols-2 gap-3.5 border-t border-border-subtle pt-[18px] sm:grid-cols-4">
+            <div>
+              <p className="text-xs text-text-faint">Taille</p>
+              <p className="mt-[3px] font-mono text-[13px] text-text">{formatBytes(document.sizeBytes)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-text-faint">Date du document</p>
+              <p className="mt-[3px] font-mono text-[13px] text-text">{document.documentDate ?? "—"}</p>
+            </div>
+            <div>
+              <p className="text-xs text-text-faint">Importé</p>
+              <p className="mt-[3px] font-mono text-[13px] text-text">{formatDate(document.createdAt)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-text-faint">Emplacement</p>
+              <p className="mt-[3px] truncate font-mono text-[13px] text-text">{document.category}/</p>
+            </div>
+          </div>
 
-          <div className="grid grid-cols-2 gap-3 border-t border-border pt-4 text-xs text-text-muted sm:grid-cols-4">
-            <div>
-              <p className="text-text">Taille</p>
-              {formatBytes(document.sizeBytes)}
-            </div>
-            <div>
-              <p className="text-text">Date du document</p>
-              {document.documentDate ?? "—"}
-            </div>
-            <div>
-              <p className="text-text">Créé le</p>
-              {formatDate(document.createdAt)}
-            </div>
-            <div>
-              <p className="text-text">Modifié le</p>
-              {formatDate(document.updatedAt)}
-            </div>
+          <div className="flex items-center gap-2.5">
+            <Button variant="secondary" size="sm" isLoading={revealing} onClick={handleReveal}>
+              Ouvrir dans l&apos;Explorateur
+            </Button>
+            <Button variant="ghost" size="sm" isLoading={undoing} disabled={busy} onClick={handleUndo}>
+              Annuler la dernière modification
+            </Button>
           </div>
         </div>
       )}

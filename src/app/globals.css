@@ -3,30 +3,40 @@
 @tailwind utilities;
 
 :root {
-  --bg: #f7f7f8;
+  --bg: #f7f8f7;
   --surface: #ffffff;
-  --surface-hover: #f0f0f2;
-  --border: #e4e4e7;
-  --text: #18181b;
-  --text-muted: #71717a;
-  --accent: #4f46e5;
-  --accent-hover: #4338ca;
-  --danger: #dc2626;
-  --success: #16a34a;
+  --surface-hover: #f4f6f4;
+  --border: #e5e8e5;
+  --border-subtle: #eff2ef;
+  --text: #16181a;
+  --text-muted: #6b7370;
+  --text-faint: #9aa19d;
+  --accent: #2f6b57;
+  --accent-hover: #245443;
+  --danger: #a0392f;
+  --success: #2f6b57;
+  --warning: #8a6a20;
+  --warning-bg: #fbf3e3;
+  --warning-dot: #c8963e;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0b0b0d;
-    --surface: #161618;
-    --surface-hover: #1e1e21;
-    --border: #2a2a2e;
-    --text: #f4f4f5;
-    --text-muted: #a1a1aa;
-    --accent: #6366f1;
-    --accent-hover: #818cf8;
-    --danger: #f87171;
-    --success: #4ade80;
+    --bg: #101211;
+    --surface: #171918;
+    --surface-hover: #1f2321;
+    --border: #2a2e2b;
+    --border-subtle: #232625;
+    --text: #f2f4f2;
+    --text-muted: #9aa6a0;
+    --text-faint: #74807a;
+    --accent: #4c9c81;
+    --accent-hover: #5fb394;
+    --danger: #e2685a;
+    --success: #4c9c81;
+    --warning: #e4b65a;
+    --warning-bg: #3a2e12;
+    --warning-dot: #d9a544;
   }
 }
 
@@ -47,4 +57,16 @@ body {
 ::selection {
   background: var(--accent);
   color: white;
+}
+
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  outline-offset: 1px;
+}
+
+/* Le bouton "effacer" natif des inputs type="search" fait doublon avec notre
+   propre bouton d'effacement (SearchBar) — masqué au profit de ce dernier. */
+input[type="search"]::-webkit-search-cancel-button {
+  display: none;
 }

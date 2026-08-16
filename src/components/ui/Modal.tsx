@@ -7,7 +7,9 @@ import { createPortal } from "react-dom";
 export interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  title?: string;
+  title?: ReactNode;
+  /** Libellé accessible du dialogue. Par défaut, utilisé tel quel si `title` est une chaîne. */
+  ariaLabel?: string;
   children: ReactNode;
   footer?: ReactNode;
   maxWidthClassName?: string;
@@ -17,6 +19,7 @@ export function Modal({
   isOpen,
   onClose,
   title,
+  ariaLabel,
   children,
   footer,
   maxWidthClassName = "max-w-lg",
@@ -56,19 +59,19 @@ export function Modal({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={title}
-        className={`relative z-10 flex max-h-[90vh] w-full ${maxWidthClassName} flex-col rounded-card border border-border bg-surface shadow-xl`}
+        aria-label={ariaLabel ?? (typeof title === "string" ? title : undefined)}
+        className={`relative z-10 flex max-h-[88vh] w-full ${maxWidthClassName} flex-col rounded-card-lg border border-border bg-surface shadow-[0_32px_64px_-24px_rgba(16,24,20,.35)]`}
       >
         {title && (
-          <div className="flex items-center justify-between border-b border-border px-6 py-4">
-            <h2 className="text-base font-semibold text-text">{title}</h2>
+          <div className="flex items-start justify-between gap-4 border-b border-border-subtle px-6 py-5">
+            <div className="min-w-0">{title}</div>
             <button
               type="button"
               onClick={onClose}
               aria-label="Fermer"
-              className="rounded-card p-1 text-text-muted transition-colors hover:bg-surface-hover hover:text-text"
+              className="flex h-8 w-8 flex-none items-center justify-center rounded-[9px] border border-border-subtle text-text-muted transition-colors hover:bg-surface-hover"
             >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
+              <svg width="15" height="15" viewBox="0 0 18 18" fill="none" aria-hidden>
                 <path
                   d="M4 4L14 14M14 4L4 14"
                   stroke="currentColor"
@@ -81,7 +84,7 @@ export function Modal({
         )}
         <div className="overflow-y-auto px-6 py-5">{children}</div>
         {footer && (
-          <div className="flex items-center justify-end gap-2 border-t border-border px-6 py-4">
+          <div className="flex items-center gap-2.5 border-t border-border-subtle bg-surface-hover/60 px-6 py-4">
             {footer}
           </div>
         )}

@@ -78,10 +78,10 @@ export function SettingsForm() {
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-4">
-        <div className="h-10 w-full animate-pulse rounded-card bg-surface-hover" />
-        <div className="h-10 w-full animate-pulse rounded-card bg-surface-hover" />
-        <div className="h-10 w-full animate-pulse rounded-card bg-surface-hover" />
+      <div className="flex flex-col gap-5 rounded-card-lg border border-border bg-surface p-6">
+        <div className="h-11 w-full animate-pulse rounded-card bg-surface-hover" />
+        <div className="h-11 w-full animate-pulse rounded-card bg-surface-hover" />
+        <div className="h-11 w-full animate-pulse rounded-card bg-surface-hover" />
       </div>
     );
   }
@@ -90,56 +90,67 @@ export function SettingsForm() {
   const requiresApiKey = selectedProviderMeta?.requiresApiKey ?? false;
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-      <p className="rounded-card border border-border bg-surface-hover px-4 py-3 text-sm text-text-muted">
-        Changer de provider IA prend effet immédiatement, sans redémarrage ni modification de code.
-      </p>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-7">
+      <div className="flex flex-col gap-[22px] rounded-card-lg border border-border bg-surface p-6">
+        <div className="flex flex-col gap-[7px]">
+          <label htmlFor="provider" className="text-[13px] font-medium text-text">
+            Provider IA
+          </label>
+          <select
+            id="provider"
+            value={provider}
+            onChange={(event) => setProvider(event.target.value as ProviderId)}
+            className="h-[42px] rounded-card border border-border bg-surface px-3 text-sm text-text"
+          >
+            {(config?.availableProviders ?? []).map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-text-faint">
+            Vos documents ne sont envoyés qu&apos;au provider que vous configurez.
+          </p>
+        </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="provider" className="text-sm font-medium text-text">
-          Provider IA
-        </label>
-        <select
-          id="provider"
-          value={provider}
-          onChange={(event) => setProvider(event.target.value as ProviderId)}
-          className="h-10 rounded-card border border-border bg-surface px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg"
-        >
-          {(config?.availableProviders ?? []).map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.label}
-            </option>
-          ))}
-        </select>
+        {requiresApiKey && (
+          <Input
+            type="password"
+            label="Clé API"
+            value={apiKeyInput}
+            onChange={(event) => setApiKeyInput(event.target.value)}
+            placeholder={config?.hasApiKey ? "•••••••••••••••• (déjà enregistrée)" : "sk-..."}
+            hint={
+              config?.hasApiKey
+                ? "Laissez vide pour conserver la clé enregistrée."
+                : "Nécessaire pour utiliser ce provider."
+            }
+            autoComplete="off"
+          />
+        )}
+
+        <Input
+          label="Modèle de génération"
+          value={model}
+          onChange={(event) => setModel(event.target.value)}
+          placeholder="gpt-4o-mini"
+          className="font-mono"
+        />
+
+        <div className="flex items-center gap-3 border-t border-border-subtle pt-5">
+          <Button type="submit" isLoading={saving}>
+            Enregistrer
+          </Button>
+        </div>
       </div>
 
-      {requiresApiKey && (
-        <Input
-          type="password"
-          label="Clé API"
-          value={apiKeyInput}
-          onChange={(event) => setApiKeyInput(event.target.value)}
-          placeholder={config?.hasApiKey ? "•••••••••••••••• (déjà enregistrée)" : "sk-..."}
-          hint={
-            config?.hasApiKey
-              ? "Laissez ce champ vide pour conserver la clé déjà enregistrée."
-              : "Nécessaire pour utiliser ce provider."
-          }
-          autoComplete="off"
-        />
-      )}
-
-      <Input
-        label="Modèle de génération"
-        value={model}
-        onChange={(event) => setModel(event.target.value)}
-        placeholder="gpt-4o-mini"
-      />
-
-      <div>
-        <Button type="submit" isLoading={saving}>
-          Enregistrer les réglages
-        </Button>
+      <div className="flex gap-3.5 rounded-[14px] border border-border-subtle bg-surface-hover/60 px-[18px] py-4">
+        <span className="mt-1.5 inline-block h-[7px] w-[7px] flex-none rounded-full bg-accent" />
+        <p className="text-[13px] leading-5 text-text-muted">
+          Vos fichiers restent sur votre machine, dans{" "}
+          <span className="font-mono text-xs text-text">data/files/&lt;catégorie&gt;/</span> — FindIt ne
+          conserve rien ailleurs.
+        </p>
       </div>
     </form>
   );

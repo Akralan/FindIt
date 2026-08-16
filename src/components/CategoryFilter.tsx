@@ -19,31 +19,31 @@ export function CategoryFilter({ categories, selected, onSelect, loading = false
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap gap-2">
         {Array.from({ length: 4 }).map((_, index) => (
-          <div key={index} className="h-8 animate-pulse rounded-card bg-surface-hover" />
+          <div key={index} className="h-8 w-20 animate-pulse rounded-full bg-surface-hover" />
         ))}
       </div>
     );
   }
 
+  if (categories.length === 0) return null;
+
   return (
-    <nav aria-label="Filtrer par catégorie" className="flex flex-col gap-1">
+    <nav aria-label="Filtrer par catégorie" className="flex flex-wrap items-center gap-2">
       <button
         type="button"
         onClick={() => onSelect(null)}
         className={clsx(
-          "flex items-center justify-between rounded-card px-3 py-2 text-left text-sm transition-colors",
-          selected === null ? "bg-accent/10 text-accent font-medium" : "text-text hover:bg-surface-hover"
+          "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-[5px] text-[13px] leading-5 transition-colors",
+          selected === null
+            ? "border-text bg-text font-medium text-bg"
+            : "border-border bg-surface text-text-muted hover:bg-surface-hover"
         )}
       >
-        <span>Toutes les catégories</span>
-        <span className="text-xs text-text-muted">{total}</span>
+        Tout
+        <span className={selected === null ? "opacity-60" : "text-text-faint"}>{total}</span>
       </button>
-
-      {categories.length === 0 && (
-        <p className="px-3 py-2 text-xs text-text-muted">Aucune catégorie pour l&apos;instant.</p>
-      )}
 
       {categories.map((item) => (
         <button
@@ -51,14 +51,14 @@ export function CategoryFilter({ categories, selected, onSelect, loading = false
           type="button"
           onClick={() => onSelect(item.category)}
           className={clsx(
-            "flex items-center justify-between rounded-card px-3 py-2 text-left text-sm transition-colors",
+            "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-[5px] text-[13px] leading-5 transition-colors",
             selected === item.category
-              ? "bg-accent/10 text-accent font-medium"
-              : "text-text hover:bg-surface-hover"
+              ? "border-text bg-text font-medium text-bg"
+              : "border-border bg-surface text-text-muted hover:bg-surface-hover"
           )}
         >
           <span className="truncate">{item.category}</span>
-          <span className="text-xs text-text-muted">{item.count}</span>
+          <span className={selected === item.category ? "opacity-60" : "text-text-faint"}>{item.count}</span>
         </button>
       ))}
     </nav>

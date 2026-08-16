@@ -139,26 +139,56 @@ avec un status HTTP approprié (400/404/500), jamais de stack trace brute.
 ## 3. Frontend (`src/app/`, `src/components/`)
 
 Design : voir `src/app/globals.css` pour les tokens (`--bg`, `--surface`,
-`--border`, `--text`, `--text-muted`, `--accent`, `--danger`, `--success`).
-Esthétique visée : sobre, professionnelle, type outil SaaS (pensez Linear /
-Notion) — pas de dégradés criards, pas d'emoji dans l'UI, typographie Inter,
-coins arrondis modérés (`rounded-card` = 12px), beaucoup d'espace blanc,
-état vide et état de chargement soignés partout.
+`--surface-hover`, `--border`, `--border-subtle`, `--text`, `--text-muted`,
+`--text-faint`, `--accent`, `--accent-hover`, `--danger`, `--success`,
+`--warning`, `--warning-bg`, `--warning-dot`). Palette chaude (vert sauge
+`#2F6B57` en accent, fond quasi-blanc `#F7F8F7`), déclinée en dark mode
+(`prefers-color-scheme`) dans la même identité (pas de retour à l'indigo).
+Esthétique visée : sobre, chaleureuse, typographie Helvetica/Inter, coins
+arrondis modérés (`rounded-card` = 12px pour boutons/champs, `rounded-card-lg`
+= 16px pour cartes/sections/modale), pastilles (`rounded-full`) pour nav et
+filtres, beaucoup d'espace blanc, état vide et état de chargement soignés
+partout, colonnes de métadonnées (taille, dates) en police mono
+(`font-mono`).
 
 - `src/app/layout.tsx` — shell global (police, `<html>`, header avec logo
-  "FindIt" texte + nav vers Réglages).
-- `src/app/page.tsx` — Dashboard : `SearchBar` en haut, filtre par catégorie
-  sur le côté, `DocumentGrid` (ou liste) des documents `confirmed`, section
-  distincte "À valider" si des documents sont `pending_review`
-  (`DocumentCard` avec bouton Valider/Modifier/Rejeter), `UploadDropzone`
-  accessible en permanence (zone de drop + bouton parcourir).
+  "FindIt" + `NavPills` (pastille active sombre `bg-text`/`text-bg`, inactive
+  transparente) vers `/` (Documents) et `/settings` (Réglages). Pas d'onglets
+  "Recherche" / "Premier lancement" — ce sont des états de `/`, pas des
+  routes (voir `src/app/page.tsx`).
+- `src/app/page.tsx` — Dashboard mono-page à 3 rendus conditionnels selon
+  l'état réel (pas 3 routes) :
+  - bibliothèque totalement vide (`hasNoDocumentsAtAll`) : écran d'accueil
+    dédié ("Vos papiers, rangés sans y penser" + `UploadDropzone
+    variant="full"` + stepper 1·2·3) ;
+  - recherche active (`searchResults !== null`) : `SearchBar` en haut +
+    "Résultats" + `DocumentList variant="search"` (ou état "Aucun
+    résultat") ;
+  - sinon (dashboard normal) : hero "Que cherchez-vous ?" + `SearchBar`,
+    `UploadDropzone variant="compact"` (ligne, drag-and-drop sur toute la
+    zone), section "À valider" en lignes (`DocumentList variant="pending"`)
+    avec bouton groupé "Tout valider" si plus d'un document en attente
+    (**pas de nouvelle route** : boucle client sur les PATCH existants
+    `PATCH /api/documents/:id` avec `{ status: "confirmed" }`, séquentiels,
+    un rafraîchissement global à la fin — plus simple qu'une route batch
+    pour ce volume et cohérent avec le modèle "un document = un PATCH"
+    déjà en place), `CategoryFilter` en pastilles horizontales, puis
+    `DocumentList variant="library"` pour les documents `confirmed`.
 - `src/app/settings/page.tsx` — formulaire : sélection du provider (liste
-  venant de `GET /api/settings`), champ clé API (masqué), modèle. Explique
-  en une phrase que changer de provider ne nécessite ni redémarrage ni code.
-- Composants dans `src/components/` : `UploadDropzone`, `DocumentCard`,
-  `DocumentGrid`, `DocumentModal` (détail + édition + undo + suppression),
-  `SearchBar`, `CategoryFilter`, `SettingsForm`, primitives `ui/Button.tsx`,
-  `ui/Badge.tsx`, `ui/Modal.tsx`, `ui/Input.tsx`, `ui/Toast.tsx` (retours
-  succès/erreur après upload, save, delete...).
+  venant de `GET /api/settings`), champ clé API (masqué), modèle, bandeau de
+  confidentialité mentionnant `data/files/<catégorie>/`. Explique en une
+  phrase que changer de provider ne nécessite ni redémarrage ni code.
+- Composants dans `src/components/` : `UploadDropzone` (variants
+  `compact`/`full`, drag-and-drop actif sur toute la zone dans les deux cas),
+  `DocumentRow` + `DocumentList` (lignes, remplacent l'ancien
+  `DocumentCard`/`DocumentGrid` en grille de cartes), `DocumentModal`
+  (détail + édition + undo + suppression + bouton Explorateur),
+  `SearchBar`, `CategoryFilter` (pastilles horizontales), `NavPills`,
+  `SettingsForm`, primitives `ui/Button.tsx` (variants `primary`,
+  `secondary`, `ghost`, `danger`, `danger-solid`, `dark`), `ui/Badge.tsx`
+  (variants incluant `warning` pour le statut "À valider"), `ui/Modal.tsx`
+  (accepte un `title` React, pas seulement une chaîne, pour composer badge +
+  nom d'origine + titre dans l'en-tête), `ui/Input.tsx`, `ui/Toast.tsx`
+  (retours succès/erreur après upload, save, delete...).
 - Tout composant qui appelle une route API le fait via `fetch` classique
   (pas de lib de data-fetching externe, on reste minimal).
