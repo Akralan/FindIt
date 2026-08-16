@@ -25,6 +25,48 @@ classification IA, sélection des deux côtés. Détails dans
 - Le téléphone scanne une fois (`expo-camera`), stocke `host`/`port`/
   `token` en local (`expo-secure-store`), les réutilise pour toutes les
   synchros suivantes sans re-scan.
+
+### 1bis. Mode hotspot (repli quand le wifi partagé isole les appareils)
+
+Décision du 17 août 2026 : certains routeurs isolent les appareils entre eux
+sur le même wifi (« AP/client isolation »), rendant le mode normal
+inutilisable sans toucher aux réglages du routeur — chose qu'on ne peut pas
+demander à un client. Repli : le PC devient son propre point d'accès wifi
+(Point d'accès mobile Windows), qui n'a pas ce problème puisqu'il n'y a plus
+de routeur tiers dans l'équation. Le protocole `/api/sync/*` ne change
+strictement rien — seule l'adresse à laquelle on le joint change.
+
+- Le payload du QR s'étend avec un champ optionnel :
+  ```json
+  {
+    "host": "192.168.137.1",
+    "port": 3000,
+    "token": "<syncToken>",
+    "hotspot": { "ssid": "FindIt-PC-1234", "password": "..." }
+  }
+  ```
+  Présent uniquement quand l'utilisateur a démarré le point d'accès depuis
+  les Réglages (bouton dédié, section Synchro) — `host` est alors l'IP du
+  PC sur l'interface du point d'accès (`192.168.137.x`, adresse fixe de
+  l'Internet Connection Sharing de Windows), pas celle du wifi habituel.
+- Quand `hotspot` est présent dans le QR scanné, le mobile affiche un écran
+  intermédiaire **avant** d'enregistrer le pairing : « Rejoins le wifi
+  <ssid> » (mot de passe copié dans le presse-papier, bouton qui ouvre les
+  réglages wifi Android via un intent système — pas de module natif custom,
+  pas de connexion silencieuse). Une fois l'utilisateur revenu dans l'app
+  (bouton « J'ai rejoint, continuer »), le pairing `host`/`port`/`token`
+  s'enregistre exactement comme en mode normal — le reste du protocole est
+  identique.
+- Démarrer/arrêter le point d'accès (`src/lib/sync/hotspot.ts`) passe par
+  une élévation Windows (UAC), jamais silencieusement — même logique que
+  `src/lib/sync/firewall.ts`. Lire son statut ne modifie rien et ne demande
+  pas d'élévation.
+- La règle de pare-feu existante (`src/lib/sync/firewall.ts`) est scopée au
+  profil réseau **Privé** ; l'interface créée par le point d'accès n'est pas
+  garantie d'être classée ainsi par Windows. Pour rester simple et fiable
+  plutôt que de traquer précisément la catégorie de chaque interface,
+  élargir cette règle à *tous* les profils (Domain/Private/Public) — accep-
+  table car elle ne couvre qu'un seul port dédié à la synchro.
 - Toute requête vers les routes `/api/sync/*` doit porter
   `Authorization: Bearer <token>` ; réponse `401` si absent ou invalide.
   Les routes `/api/sync/*` sont les SEULES à exiger ce header — le reste

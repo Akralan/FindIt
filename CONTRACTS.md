@@ -142,6 +142,28 @@ avec un status HTTP approprié (400/404/500), jamais de stack trace brute.
   détectée.
 - `POST /api/settings/sync/regenerate` — régénère le `syncToken` (invalide
   l'ancien), retourne le même format que `GET /api/settings/sync`.
+- `GET /api/settings/sync/firewall` — lecture seule, pas d'élévation.
+  Retourne `{ exists: boolean, platform: string }` : `exists` indique si la
+  règle de pare-feu `FindIt webapp (LAN, synchro mobile)` existe déjà.
+- `POST /api/settings/sync/firewall` — déclenche l'invite d'élévation
+  Windows (UAC) pour créer/recréer cette règle sur tous les profils réseau
+  (Domain/Private/Public — voir `src/lib/sync/firewall.ts` et
+  SYNC_CONTRACTS.md §1bis pour la justification). Retourne `{ ok: true,
+  port }`, ou `{ error }` (400 hors Windows, 500 si la règle n'existe
+  toujours pas après l'invite — refus probable de l'utilisateur).
+- `GET /api/settings/sync/hotspot` — lecture seule, pas d'élévation.
+  Retourne `{ isActive: boolean | null, ssid: string | null, platform:
+  string }` (statut du point d'accès mobile Windows, voir
+  `src/lib/sync/hotspot.ts`). `isActive`/`ssid` valent `null` si le statut
+  n'a pas pu être lu (hors Windows, API indisponible...).
+- `POST /api/settings/sync/hotspot` — body `{ action: "start" | "stop" }`,
+  déclenche l'invite d'élévation Windows (UAC). `"start"` démarre le point
+  d'accès avec des identifiants générés pour la session et retourne `{ ok:
+  true, pairingInfo }` où `pairingInfo` (`SyncPairingInfo`) contient le QR
+  complet — payload incluant `hotspot: { ssid, password }` et `host` =
+  IP du PC sur l'interface du point d'accès (voir SYNC_CONTRACTS.md §1bis).
+  `"stop"` arrête le point d'accès et retourne `{ ok: true }`. `{ error }`
+  (400 action invalide ou hors Windows, 500 échec/refus de l'invite).
 
 ### Routes de synchro PC ↔ Mobile (`src/app/api/sync/`)
 
