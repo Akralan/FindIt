@@ -1,0 +1,30 @@
+# Lancement de FindIt en conteneur, avec stockage persistant.
+#
+# Prérequis : un fichier .env.local à la racine du projet (copié depuis
+# .env.example, voir README.md), et un dossier ./data à côté de ce fichier
+# (E:\OneDrive\Bureau\PROJETS\FindIt\data en local) — créé automatiquement
+# au premier lancement si absent, monté ici comme volume persistant pour
+# ne jamais perdre la base (data/db.json) ni les fichiers rangés.
+#
+# Usage : docker compose up -d --build
+
+services:
+  findit:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: findit:latest
+    container_name: findit
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - .env.local
+    environment:
+      # Le chemin de données côté conteneur est toujours /app/data (voir
+      # Dockerfile) ; il correspond au volume ./data ci-dessus, quelle que
+      # soit la valeur de DATA_DIR dans .env.local (pensée pour un lancement
+      # hors conteneur).
+      - DATA_DIR=/app/data
+    restart: unless-stopped
