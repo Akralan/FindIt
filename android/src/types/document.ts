@@ -40,9 +40,23 @@ export interface SearchResult {
   score: number;
 }
 
-/** Payload JSON encodé dans le QR code de pairing (SYNC_CONTRACTS.md §1). */
+/**
+ * Point d'accès wifi démarré par le PC en repli, quand le wifi partagé
+ * isole les appareils entre eux (SYNC_CONTRACTS.md §1bis, mode hotspot).
+ */
+export interface HotspotInfo {
+  ssid: string;
+  password: string;
+}
+
+/**
+ * Payload JSON encodé dans le QR code de pairing (SYNC_CONTRACTS.md §1).
+ * `hotspot` est optionnel : présent uniquement en mode hotspot
+ * (SYNC_CONTRACTS.md §1bis), absent en mode normal (wifi partagé).
+ */
 export interface PairingInfo {
   host: string;
   port: number;
   token: string;
+  hotspot?: HotspotInfo;
 }

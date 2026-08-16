@@ -31,6 +31,11 @@ parallèle sur `src/`).
   Android / Keychain iOS) — jamais en AsyncStorage en clair.
 - **expo-camera** (`CameraView` + `useCameraPermissions`) pour le scan QR
   (`barcodeScannerSettings={{ barcodeTypes: ["qr"] }}`).
+- **expo-clipboard** (`Clipboard.setStringAsync`) pour copier le mot de passe
+  du hotspot dans le presse-papier lors du pairing en mode hotspot (voir
+  section dédiée ci-dessous) — aucune entrée `plugins` requise dans
+  `app.json` (pas de permission native additionnelle, confirmé par
+  `expo-doctor`, 21/21 vérifications toujours au vert après ajout).
 - **expo-intent-launcher** + **expo-sharing** pour l'ouverture des fichiers
   non-image (PDF) : intent `ACTION_VIEW` Android avec une URI de contenu
   FileProvider (`FileSystem.getContentUriAsync`, obligatoire depuis Android 7
@@ -157,6 +162,48 @@ liste tient en mémoire (échelle : dizaines/centaines de documents).
    document" qui délègue à l'app système (voir choix expo-intent-launcher
    ci-dessus).
 
+### Mode hotspot (repli, SYNC_CONTRACTS.md §1bis)
+
+Certains routeurs isolent les appareils entre eux sur le même wifi (« AP/
+client isolation »), rendant le pairing normal inutilisable. Repli côté PC :
+démarrer son propre point d'accès wifi et encoder un champ optionnel
+`hotspot: { ssid, password }` dans le QR, en plus de `host`/`port`/`token`
+habituels. **Le protocole de synchro ne change pas du tout une fois pairé —
+seul le chemin pour y arriver change** : une fois le pairing enregistré,
+`app/sync.tsx` et le reste du code n'ont strictement aucune conscience que
+le pairing vient d'un hotspot ou du wifi partagé habituel (même `host`/
+`port`/`token`, mêmes routes `/api/sync/*`).
+
+- **Rétro-compatibilité** : `hotspot` est un champ optionnel du payload
+  existant, pas un nouveau format de QR. `parsePairingPayload`
+  (`src/utils/qrPayload.ts`) reste capable de parser un QR sans ce champ
+  exactement comme avant (retourne `PairingInfo` sans `hotspot`) ; un
+  `hotspot` malformé (présent mais avec `ssid`/`password` invalides) fait
+  rejeter tout le payload plutôt que de l'ignorer silencieusement — mieux
+  vaut un "code non reconnu" explicite qu'un pairing à moitié abouti.
+- **Écran intermédiaire** (`app/scan.tsx`) : quand le QR scanné contient
+  `hotspot`, le pairing n'est **pas** enregistré immédiatement. Le scan
+  bascule sur un écran dédié (« Rejoins le wifi du PC pour continuer ») qui :
+  1. copie le mot de passe dans le presse-papier (`expo-clipboard`) dès
+     l'affichage de l'écran, avec un message de repli si la copie échoue
+     (rare, mais `setStringAsync` peut renvoyer `false`) ;
+  2. propose un bouton "Ouvrir les réglages Wi-Fi" →
+     `IntentLauncher.startActivityAsync(IntentLauncher.ActivityAction.WIFI_SETTINGS)`
+     (même patron que l'usage existant d'`expo-intent-launcher` dans
+     `src/storage/fileStorage.ts` : pas de connexion silencieuse au réseau,
+     pas de module natif custom — on délègue entièrement à l'UI système
+     Android, avec une alerte de repli si l'intent échoue) ;
+  3. n'enregistre le pairing (`usePairing().setPairing`, exactement le même
+     appel que le flux normal) qu'au clic sur "J'ai rejoint le wifi,
+     continuer" ;
+  4. propose "Annuler" pour revenir en arrière sans rien enregistrer et
+     permettre un nouveau scan.
+- **Aucune régression sur le flux normal** : quand `hotspot` est absent du
+  payload scanné, `app/scan.tsx` suit exactement le même chemin qu'avant
+  (pairing enregistré dès le scan, alerte de confirmation, retour en
+  arrière) — la branche hotspot est un embranchement supplémentaire, pas une
+  réécriture du chemin existant.
+
 ## Ce qui est fonctionnel vs. ce qui dépend du serveur PC
 
 **Fonctionnel dès maintenant, sans le serveur** :
@@ -216,12 +263,43 @@ une fois les deux côtés (PC + mobile) assemblés :
 - Aucun test automatisé (unitaire/e2e) n'a été écrit pour cette v1 — hors
   périmètre de la tâche telle que cadrée, mais à considérer avant la
   v1.1/v1.2.
+- **Mode hotspot** (`app/scan.tsx`, écran intermédiaire) : non exercé sur
+  device réel. À valider manuellement une fois le PC capable de démarrer un
+  hotspot et d'encoder `hotspot` dans son QR : copie effective du mot de
+  passe dans le presse-papier sur un vrai clavier Android (vérifier que le
+  presse-papier le propose bien au moment de saisir le mot de passe dans les
+  réglages Wi-Fi système), ouverture réelle de l'écran `WIFI_SETTINGS` via
+  l'intent (comportement peut varier selon la surcouche constructeur —
+  Samsung/Xiaomi/etc. redirigent parfois vers un écran différent des AOSP
+  stock), et le parcours complet : scan → écran hotspot → bascule manuelle
+  du wifi par l'utilisateur → retour dans l'app → "J'ai rejoint, continuer"
+  → pairing enregistré → synchro fonctionnelle sur l'IP `192.168.137.x` du
+  hotspot Windows.
 
 ## Validation effectuée
 
-- `npm install` réussit dans `android/` (588 paquets, aucune erreur de
-  résolution après retrait de la tentative Inter).
+- `npm install` réussit dans `android/` (590 paquets avec `expo-clipboard`).
+  **Note (17/08/2026)** : au moment d'ajouter `expo-clipboard` pour le mode
+  hotspot, `npm install`/`npm ci` échouaient déjà avant tout changement de ce
+  paquet — conflit de peer-dependencies (`ERESOLVE`) entre `react@19.2.3`
+  (pinné en dépendance directe) et `react-dom@19.2.8` que npm tentait de
+  résoudre pour satisfaire les peers optionnels de `@radix-ui/*`/`vaul`
+  utilisés par le support Web d'`expo-router`/`@expo/ui` — le même sous-
+  arbre déjà identifié comme fragile dans la section « Écarté délibérément »
+  ci-dessus (tentative Inter). Confirmé reproductible indépendamment de
+  cette tâche (même échec avec `expo-clipboard` retiré de `package.json`) :
+  drift du registre npm entre l'écriture initiale de ce document et cette
+  tâche, `react-dom` n'apparaissant dans aucune résolution figée du
+  `package-lock.json` existant (peer optionnel jamais réellement installé).
+  Corrigé en ajoutant `"overrides": { "react-dom": "19.2.3" }` à
+  `package.json` — force une version de `react-dom` cohérente avec `react`
+  pour satisfaire les peers sans `--legacy-peer-deps` (qu'on continue
+  d'éviter, cf. section Inter). `react-dom` n'est de toute façon jamais
+  exécuté sur Android (seulement pertinent pour `expo start --web`,
+  non utilisé par cette app).
 - `npx tsc --noEmit` (strict, `noUncheckedIndexedAccess` activé) passe sans
-  erreur ni avertissement sur l'ensemble du projet.
-- `npx expo-doctor` : 21/21 vérifications passées (schéma `app.json`,
-  cohérence des versions de paquets vis-à-vis du SDK, etc.).
+  erreur ni avertissement sur l'ensemble du projet, y compris après l'ajout
+  du mode hotspot.
+- `npx expo-doctor` : 21/21 vérifications passées, y compris après l'ajout
+  d'`expo-clipboard` (pas d'entrée `plugins` requise dans `app.json` pour
+  cette lib).
