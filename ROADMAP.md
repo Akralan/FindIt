@@ -82,13 +82,28 @@ accueillir ceci sans rien changer ailleurs dans l'app :
       licence actuelle (PolyForm Noncommercial) l'interdit délibérément —
       décision à revisiter si une demande réelle apparaît
 
+## v-mobile — Appli Android (Expo), en parallèle de v2
+
+Décision du 16 août 2026 : revient sur le choix initial « mobile hors
+périmètre ». Motivation : les documents rangés sur le PC doivent être
+retrouvables même sans accès au PC (ex. en déplacement, sans wifi partagé).
+Roadmap détaillée, stack et séquencement dans
+[android/ROADMAP.md](./android/ROADMAP.md) ; protocole de synchro PC ↔
+mobile dans [SYNC_CONTRACTS.md](./SYNC_CONTRACTS.md). Résumé : appli Expo
+(React Native + TypeScript) installable via Play Store, synchro manuelle et
+sélective sur réseau local (pairing QR), v1 en lecture seule (pull), v1.1
+ajoute la capture/l'envoi depuis le téléphone — le PC reste la seule source
+de classification IA.
+
 ## Ce qui n'est volontairement pas dans le plan
 
 - Comptes utilisateurs / multi-tenant — hors périmètre par choix du 16 août
   2026 (déploiement auto-hébergé mono-utilisateur)
 - Édition de PDF, signature, fusion — hors périmètre, cf. document de
   cadrage section 6
-- Mobile — hors périmètre v1 et v2
+- Classification IA embarquée côté mobile — voir android/ROADMAP.md
+- Synchro automatique en tâche de fond — la synchro reste toujours
+  déclenchée manuellement, des deux côtés
 
 ## Principe directeur pour toute contribution
 
