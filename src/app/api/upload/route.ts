@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
-import { v4 as uuidv4 } from "uuid";
 
 import type { DocumentRecord } from "@/lib/types";
-import { createDocument } from "@/lib/db/documents";
-import { logEvent } from "@/lib/db/events";
-import { saveFile } from "@/lib/storage/files";
-import { extractDocument } from "@/lib/extraction";
+import { ingestUploadedFile } from "@/lib/upload-pipeline";
 
 export const runtime = "nodejs";
 
@@ -44,29 +40,7 @@ export async function POST(req: Request): Promise<NextResponse> {
         const mimeType = file.type || "application/octet-stream";
         const fileName = file.name || "document";
 
-        const extraction = await extractDocument({ buffer, mimeType, fileName });
-
-        const filePath = await saveFile(buffer, extraction.suggestedCategory, extraction.suggestedName);
-
-        const now = new Date().toISOString();
-        const record: DocumentRecord = {
-          id: uuidv4(),
-          originalName: fileName,
-          currentName: extraction.suggestedName,
-          category: extraction.suggestedCategory,
-          summary: extraction.summary,
-          filePath,
-          mimeType,
-          sizeBytes: buffer.byteLength,
-          documentDate: extraction.documentDate,
-          status: "pending_review",
-          createdAt: now,
-          updatedAt: now,
-        };
-
-        const created = await createDocument(record);
-        await logEvent({ documentId: created.id, type: "create", before: null, after: created });
-
+        const created = await ingestUploadedFile({ buffer, mimeType, fileName });
         documents.push(created);
       } catch (err) {
         failures.push(`${file.name || "fichier"} : ${errorMessage(err)}`);

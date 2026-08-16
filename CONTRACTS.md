@@ -135,6 +135,36 @@ avec un status HTTP approprié (400/404/500), jamais de stack trace brute.
 - `GET /api/search?q=...` — `{ results: SearchResult[] }`
 - `GET /api/settings` — `{ config: ProviderConfigPublic }`
 - `POST /api/settings` — body `Partial<ProviderConfig>` — `{ config: ProviderConfigPublic }`
+- `GET /api/settings/sync` — route interne à la page Réglages (hors contrat
+  mobile, voir `SYNC_CONTRACTS.md`). Retourne `{ host, port, token,
+  qrDataUrl }` (`SyncPairingInfo`), génère le `syncToken` s'il n'existe pas
+  encore. `qrDataUrl` est `null` si aucune IP locale non-interne n'est
+  détectée.
+- `POST /api/settings/sync/regenerate` — régénère le `syncToken` (invalide
+  l'ancien), retourne le même format que `GET /api/settings/sync`.
+
+### Routes de synchro PC ↔ Mobile (`src/app/api/sync/`)
+
+Contrat détaillé, formats exacts et pairing : voir `SYNC_CONTRACTS.md` —
+c'est la source de vérité partagée avec l'app mobile (`android/`), ne pas
+diverger des noms de champs/routes sans mettre à jour ce fichier des deux
+côtés. Toutes exigent `Authorization: Bearer <syncToken>`, `401` sinon
+(vérification factorisée dans `src/lib/sync/auth.ts`, appelée par chaque
+route — pas dupliquée).
+
+- `GET /api/sync/manifest` — `{ documents: SyncManifestEntry[] }`, uniquement
+  les documents `status: "confirmed"` (sous-ensemble de `DocumentRecord`,
+  type dans `src/lib/types.ts`).
+- `GET /api/sync/documents/:id/file` — sert les octets bruts du fichier
+  (`Content-Type` = `mimeType` du document, `Content-Disposition:
+  attachment`). 404 si le document n'existe pas. Distinct de `POST
+  /api/documents/:id/reveal` (Explorateur côté PC).
+- `POST /api/sync/receive` — `multipart/form-data`, champ unique `file` (un
+  seul fichier, contrairement à `/api/upload`). Réutilise le pipeline commun
+  `src/lib/upload-pipeline.ts` (`ingestUploadedFile`), partagé avec
+  `/api/upload` : extraction IA, sauvegarde, `status: "pending_review"`.
+  Réponse : `{ document: DocumentRecord }`. Livrée en v1 côté PC mais pas
+  encore appelée par le mobile (v1 = pull seul, voir `android/ROADMAP.md`).
 
 ## 3. Frontend (`src/app/`, `src/components/`)
 
@@ -177,14 +207,18 @@ partout, colonnes de métadonnées (taille, dates) en police mono
 - `src/app/settings/page.tsx` — formulaire : sélection du provider (liste
   venant de `GET /api/settings`), champ clé API (masqué), modèle, bandeau de
   confidentialité mentionnant `data/files/<catégorie>/`. Explique en une
-  phrase que changer de provider ne nécessite ni redémarrage ni code.
+  phrase que changer de provider ne nécessite ni redémarrage ni code. Contient
+  aussi la section « Synchro mobile » (`SyncSettings`, voir ci-dessous et
+  `SYNC_CONTRACTS.md`).
 - Composants dans `src/components/` : `UploadDropzone` (variants
   `compact`/`full`, drag-and-drop actif sur toute la zone dans les deux cas),
   `DocumentRow` + `DocumentList` (lignes, remplacent l'ancien
   `DocumentCard`/`DocumentGrid` en grille de cartes), `DocumentModal`
   (détail + édition + undo + suppression + bouton Explorateur),
   `SearchBar`, `CategoryFilter` (pastilles horizontales), `NavPills`,
-  `SettingsForm`, primitives `ui/Button.tsx` (variants `primary`,
+  `SettingsForm`, `SyncSettings` (QR code de pairing généré côté serveur via
+  la lib `qrcode`, bouton « Régénérer le jeton » avec confirmation inline,
+  même style que `SettingsForm`), primitives `ui/Button.tsx` (variants `primary`,
   `secondary`, `ghost`, `danger`, `danger-solid`, `dark`), `ui/Badge.tsx`
   (variants incluant `warning` pour le statut "À valider"), `ui/Modal.tsx`
   (accepte un `title` React, pas seulement une chaîne, pour composer badge +

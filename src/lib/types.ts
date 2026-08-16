@@ -92,3 +92,21 @@ export interface SearchResult {
   document: DocumentSummary;
   score: number;
 }
+
+// ---------------------------------------------------------------------------
+// Synchro PC ↔ Mobile — voir SYNC_CONTRACTS.md, la source de vérité partagée
+// avec l'app mobile Expo (`android/`). Ne jamais renommer ces champs sans
+// mettre à jour ce contrat des deux côtés.
+// ---------------------------------------------------------------------------
+
+/** Sous-ensemble de DocumentRecord exposé par GET /api/sync/manifest. */
+export interface SyncManifestEntry {
+  id: string;
+  currentName: string;
+  category: string;
+  summary: string;
+  mimeType: string;
+  sizeBytes: number;
+  documentDate?: string;
+  updatedAt: string;
+}

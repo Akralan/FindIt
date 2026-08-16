@@ -1,4 +1,5 @@
 import { SettingsForm } from "@/components/SettingsForm";
+import { SyncSettings } from "@/components/SyncSettings";
 
 export default function SettingsPage() {
   return (
@@ -11,6 +12,7 @@ export default function SettingsPage() {
         </p>
       </div>
       <SettingsForm />
+      <SyncSettings />
     </div>
   );
 }
