@@ -20,7 +20,6 @@ function isValidConfigPatch(body: unknown): body is Partial<ProviderConfig> {
   if (b.provider !== undefined && !isProviderId(b.provider)) return false;
   if (b.openaiApiKey !== undefined && typeof b.openaiApiKey !== "string") return false;
   if (b.openaiModel !== undefined && typeof b.openaiModel !== "string") return false;
-  if (b.openaiEmbeddingModel !== undefined && typeof b.openaiEmbeddingModel !== "string") return false;
   return true;
 }
 
@@ -53,7 +52,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       return NextResponse.json(
         {
           error:
-            "Corps de requête invalide : champs acceptés \"provider\", \"openaiApiKey\", \"openaiModel\", \"openaiEmbeddingModel\".",
+            "Corps de requête invalide : champs acceptés \"provider\", \"openaiApiKey\", \"openaiModel\".",
         },
         { status: 400 }
       );

@@ -38,7 +38,6 @@ export async function getProvider(): Promise<AIProvider> {
       return new OpenAIProvider({
         apiKey: config.openaiApiKey,
         model: config.openaiModel,
-        embeddingModel: config.openaiEmbeddingModel,
       });
     }
     case "mock":

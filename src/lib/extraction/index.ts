@@ -17,7 +17,7 @@ import { extractPdfText, renderPdfFirstPageToPng } from "./pdf";
 const MIN_NATIVE_PDF_TEXT_LENGTH = 40;
 
 /**
- * Extrait le contenu d'un document et en déduit nom/catégorie/tags/résumé
+ * Extrait le contenu d'un document et en déduit nom/catégorie/résumé
  * suggérés via le provider IA actif.
  *
  * Stratégie selon le type MIME :

@@ -15,7 +15,6 @@ export function SettingsForm() {
   const [provider, setProvider] = useState<ProviderId>("mock");
   const [apiKeyInput, setApiKeyInput] = useState("");
   const [model, setModel] = useState("");
-  const [embeddingModel, setEmbeddingModel] = useState("");
 
   const { showToast } = useToast();
 
@@ -31,7 +30,6 @@ export function SettingsForm() {
           setConfig(publicConfig);
           setProvider(publicConfig.provider);
           setModel(publicConfig.openaiModel ?? "");
-          setEmbeddingModel(publicConfig.openaiEmbeddingModel ?? "");
         }
       } catch (err) {
         if (!cancelled) {
@@ -55,7 +53,6 @@ export function SettingsForm() {
       const patch: Record<string, unknown> = { provider };
       if (apiKeyInput.trim().length > 0) patch.openaiApiKey = apiKeyInput.trim();
       if (model.trim().length > 0) patch.openaiModel = model.trim();
-      if (embeddingModel.trim().length > 0) patch.openaiEmbeddingModel = embeddingModel.trim();
 
       const res = await fetch("/api/settings", {
         method: "POST",
@@ -69,7 +66,6 @@ export function SettingsForm() {
       setConfig(publicConfig);
       setProvider(publicConfig.provider);
       setModel(publicConfig.openaiModel ?? "");
-      setEmbeddingModel(publicConfig.openaiEmbeddingModel ?? "");
       setApiKeyInput("");
       showToast("Réglages enregistrés.", "success");
     } catch (err) {
@@ -133,20 +129,12 @@ export function SettingsForm() {
         />
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Input
-          label="Modèle de génération"
-          value={model}
-          onChange={(event) => setModel(event.target.value)}
-          placeholder="gpt-4o-mini"
-        />
-        <Input
-          label="Modèle d'embedding"
-          value={embeddingModel}
-          onChange={(event) => setEmbeddingModel(event.target.value)}
-          placeholder="text-embedding-3-small"
-        />
-      </div>
+      <Input
+        label="Modèle de génération"
+        value={model}
+        onChange={(event) => setModel(event.target.value)}
+        placeholder="gpt-4o-mini"
+      />
 
       <div>
         <Button type="submit" isLoading={saving}>

@@ -9,7 +9,6 @@ import OpenAI from "openai";
 import type { AIProvider, ExtractInput, ExtractionResult } from "@/lib/types";
 
 const DEFAULT_CHAT_MODEL = "gpt-4o-mini";
-const DEFAULT_EMBEDDING_MODEL = "text-embedding-3-small";
 
 /** Longueur minimale de textHint en dessous de laquelle on considère qu'il n'y a pas de texte exploitable. */
 const TEXT_HINT_MIN_LENGTH = 40;
@@ -18,21 +17,17 @@ const EXTRACTION_SYSTEM_PROMPT = `Tu es un assistant de classement documentaire.
 
 Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, respectant exactement ce schéma :
 {
-  "text": string,               // texte intégral du document tel que tu peux le lire (OCR si image) ; chaîne vide si vraiment illisible
   "suggestedName": string,      // nom de fichier suggéré avec extension, sans chemin, sans espaces (utilise des tirets), ex: "facture-edf-2026-03.pdf"
   "suggestedCategory": string,  // catégorie/dossier suggéré, ex: "Factures", "Contrats", "Identité", "Banque", "Santé", "Divers"
-  "suggestedTags": string[],    // 1 à 5 mots-clés pertinents
   "summary": string,            // résumé court du document, 1 à 2 phrases, en français
   "documentDate": string | null // date du document au format ISO YYYY-MM-DD si détectée, sinon null
 }
 
-Ne renvoie rien d'autre que ce JSON.`;
+Ne renvoie rien d'autre que ce JSON. Ne renvoie jamais le texte intégral du document : seulement ces champs de synthèse.`;
 
 interface RawExtraction {
-  text?: unknown;
   suggestedName?: unknown;
   suggestedCategory?: unknown;
-  suggestedTags?: unknown;
   summary?: unknown;
   documentDate?: unknown;
 }
@@ -65,7 +60,7 @@ function toApiError(error: unknown, context: string): Error {
   return new Error(`Erreur inconnue lors de l'appel OpenAI (${context}).`);
 }
 
-function parseExtractionResult(content: string, fallbackText?: string): ExtractionResult {
+function parseExtractionResult(content: string): ExtractionResult {
   let raw: RawExtraction;
   try {
     raw = JSON.parse(content) as RawExtraction;
@@ -75,10 +70,6 @@ function parseExtractionResult(content: string, fallbackText?: string): Extracti
     );
   }
 
-  const text =
-    typeof raw.text === "string" && raw.text.length > 0
-      ? raw.text
-      : fallbackText ?? "";
   const suggestedName =
     typeof raw.suggestedName === "string" && raw.suggestedName.length > 0
       ? raw.suggestedName
@@ -87,9 +78,6 @@ function parseExtractionResult(content: string, fallbackText?: string): Extracti
     typeof raw.suggestedCategory === "string" && raw.suggestedCategory.length > 0
       ? raw.suggestedCategory
       : "Divers";
-  const suggestedTags = Array.isArray(raw.suggestedTags)
-    ? raw.suggestedTags.filter((t): t is string => typeof t === "string")
-    : [];
   const summary = typeof raw.summary === "string" ? raw.summary : "";
   const documentDate =
     typeof raw.documentDate === "string" && raw.documentDate.length > 0
@@ -97,10 +85,8 @@ function parseExtractionResult(content: string, fallbackText?: string): Extracti
       : undefined;
 
   return {
-    text,
     suggestedName,
     suggestedCategory,
-    suggestedTags,
     summary,
     documentDate,
   };
@@ -112,12 +98,10 @@ export class OpenAIProvider implements AIProvider {
 
   private client: OpenAI;
   private chatModel: string;
-  private embeddingModel: string;
 
-  constructor(options: { apiKey: string; model?: string; embeddingModel?: string }) {
+  constructor(options: { apiKey: string; model?: string }) {
     this.client = new OpenAI({ apiKey: options.apiKey });
     this.chatModel = options.model || DEFAULT_CHAT_MODEL;
-    this.embeddingModel = options.embeddingModel || DEFAULT_EMBEDDING_MODEL;
   }
 
   async extractDocument(input: ExtractInput): Promise<ExtractionResult> {
@@ -197,29 +181,10 @@ export class OpenAIProvider implements AIProvider {
       if (!content) {
         throw new Error("Réponse vide du provider OpenAI.");
       }
-      return parseExtractionResult(content, text);
+      return parseExtractionResult(content);
     } catch (error) {
       if (error instanceof OpenAI.APIError) {
         throw toApiError(error, "extraction texte");
-      }
-      throw error;
-    }
-  }
-
-  async embed(text: string): Promise<number[]> {
-    try {
-      const response = await this.client.embeddings.create({
-        model: this.embeddingModel,
-        input: text,
-      });
-      const embedding = response.data[0]?.embedding;
-      if (!embedding) {
-        throw new Error("Réponse d'embedding vide du provider OpenAI.");
-      }
-      return embedding;
-    } catch (error) {
-      if (error instanceof OpenAI.APIError) {
-        throw toApiError(error, "embedding");
       }
       throw error;
     }

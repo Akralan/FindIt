@@ -124,3 +124,8 @@ export async function deleteFileToTrash(relPath: string): Promise<void> {
 export async function readFile(relPath: string): Promise<Buffer> {
   return fs.readFile(path.join(filesRootDir(), relPath));
 }
+
+/** Résout le chemin absolu sur le disque d'un fichier stocké (chemin relatif à DATA_DIR/files). */
+export function getAbsolutePath(relPath: string): string {
+  return path.join(filesRootDir(), relPath);
+}

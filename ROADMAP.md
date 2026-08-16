@@ -17,18 +17,30 @@ avec sa clé OpenAI, lancer, et utiliser pour de vrai sur ses documents.
 - [x] Cadrage produit et arbitrages (déploiement, licence, roadmap)
 - [x] Architecture : contrats d'API et de types (`CONTRACTS.md`,
       `src/lib/types.ts`), abstraction provider IA
-- [ ] Provider OpenAI (extraction + embeddings) + provider `mock` pour
-      développer sans clé
-- [ ] Pipeline d'extraction : images, PDF texte, PDF scanné (fallback image)
-- [ ] Stockage documents (JSON + fichiers sur disque) et historique
+- [x] Provider OpenAI (extraction) + provider `mock` pour développer sans clé
+- [x] Pipeline d'extraction : images, PDF texte, PDF scanné (fallback image)
+- [x] Stockage documents (JSON + fichiers sur disque) et historique
       d'événements (undo)
-- [ ] Upload avec prévisualisation, validation manuelle, renommage/
+- [x] Upload avec prévisualisation, validation manuelle, renommage/
       classement automatique
-- [ ] Recherche en langage naturel (embeddings + similarité cosinus)
-- [ ] Interface : dashboard, fiche document, réglages (choix du provider
+- [x] Recherche en langage naturel : correspondance floue sur nom/catégorie/
+      résumé (pas d'IA, pas d'embedding — voir note ci-dessous)
+- [x] Interface : dashboard, fiche document, réglages (choix du provider
       depuis l'UI, sans toucher au code)
-- [ ] Build qui passe, app qui tourne en local de bout en bout
-- [ ] Packaging open source : README, LICENSE, CONTRIBUTING, `.env.example`
+- [x] Build qui passe, app qui tourne en local de bout en bout
+- [x] Packaging open source : README, LICENSE, CONTRIBUTING, `.env.example`
+
+**Note sur la recherche** : la v1 utilisait initialement des embeddings
+OpenAI + similarité cosinus, mais sans seuil de coupure — un document
+totalement hors-sujet ressortait quand même avec un score non nul (ex :
+un CV remonté à 20% sur une recherche « facture »), affiché en pourcentage
+sans que ce chiffre soit interprétable pour l'utilisateur. Décision du
+16 août 2026 : remplacé par une correspondance floue sur les champs déjà
+écrits par l'IA à l'extraction (nom, catégorie, résumé), qui ne renvoie
+que des résultats ayant une correspondance réelle. Plus simple, gratuit,
+et le comportement attendu à l'échelle d'une bibliothèque personnelle.
+Une vraie recherche sémantique reste une option v2 si le besoin apparaît
+avec l'usage réel (voir section v2).
 
 ## v1.1 — Qualité et robustesse
 
@@ -55,6 +67,9 @@ accueillir ceci sans rien changer ailleurs dans l'app :
       masque/désactive tout provider cloud, avec avertissement clair si
       l'utilisateur en choisit un quand même
 - [ ] Comparatif qualité local vs cloud sur le même corpus de test que v1.1
+- [ ] Recherche sémantique (embeddings) en option, seulement si la
+      correspondance floue de la v1 montre ses limites en usage réel — avec
+      seuil de pertinence dès le départ, pas de score affiché à l'utilisateur
 
 ## v2.x — Distribution et ce que le document de cadrage visait à l'origine
 

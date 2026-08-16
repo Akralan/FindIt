@@ -83,40 +83,11 @@ export class MockProvider implements AIProvider {
     const day = String(1 + Math.floor(random() * 28)).padStart(2, "0");
     const documentDate = `${year}-${month}-${day}`;
 
-    const tagPool = ["important", "à-classer", "personnel", "pro", "urgent", "archive"];
-    const tagCount = 1 + Math.floor(random() * 3);
-    const tags: string[] = [];
-    for (let i = 0; i < tagCount; i++) {
-      const tag = tagPool[Math.floor(random() * tagPool.length)];
-      if (!tags.includes(tag)) {
-        tags.push(tag);
-      }
-    }
-
-    const text =
-      input.textHint && input.textHint.length > 0
-        ? input.textHint
-        : `Texte simulé extrait de "${input.fileName}" (provider mock, aucun contenu réel n'a été lu).`;
-
     return {
-      text,
       suggestedName: `${slug}-${documentDate}${extension}`,
       suggestedCategory: category,
-      suggestedTags: tags,
       summary: `Document "${baseName}" classé automatiquement (données de démonstration, provider mock).`,
       documentDate,
     };
-  }
-
-  async embed(text: string): Promise<number[]> {
-    const seed = hashString(text);
-    const random = seededRandom(seed);
-    const dimensions = 32;
-    const vector: number[] = [];
-    for (let i = 0; i < dimensions; i++) {
-      // Composantes dans [-1, 1], déterministes à partir du texte.
-      vector.push(random() * 2 - 1);
-    }
-    return vector;
   }
 }

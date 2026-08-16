@@ -23,7 +23,6 @@ function isDocumentStatus(value: unknown): value is DocumentStatus {
 interface PatchBody {
   currentName?: string;
   category?: string;
-  tags?: string[];
   status?: DocumentStatus;
 }
 
@@ -32,9 +31,6 @@ function isValidPatchBody(body: unknown): body is PatchBody {
   const b = body as Record<string, unknown>;
   if (b.currentName !== undefined && typeof b.currentName !== "string") return false;
   if (b.category !== undefined && typeof b.category !== "string") return false;
-  if (b.tags !== undefined && (!Array.isArray(b.tags) || !b.tags.every((t) => typeof t === "string"))) {
-    return false;
-  }
   if (b.status !== undefined && !isDocumentStatus(b.status)) return false;
   return true;
 }
@@ -56,7 +52,7 @@ export async function GET(_req: Request, { params }: RouteContext): Promise<Next
 
 /**
  * PATCH /api/documents/:id
- * body: Partial<Pick<DocumentRecord, "currentName"|"category"|"tags"|"status">>
+ * body: Partial<Pick<DocumentRecord, "currentName"|"category"|"status">>
  */
 export async function PATCH(req: Request, { params }: RouteContext): Promise<NextResponse> {
   try {
@@ -74,7 +70,7 @@ export async function PATCH(req: Request, { params }: RouteContext): Promise<Nex
 
     if (!isValidPatchBody(rawBody)) {
       return NextResponse.json(
-        { error: "Corps de requête invalide : champs acceptés \"currentName\", \"category\", \"tags\", \"status\"." },
+        { error: "Corps de requête invalide : champs acceptés \"currentName\", \"category\", \"status\"." },
         { status: 400 }
       );
     }
@@ -93,11 +89,6 @@ export async function PATCH(req: Request, { params }: RouteContext): Promise<Nex
       before.category = existing.category;
       after.category = body.category;
       patch.category = body.category;
-    }
-    if (body.tags !== undefined && JSON.stringify(body.tags) !== JSON.stringify(existing.tags)) {
-      before.tags = existing.tags;
-      after.tags = body.tags;
-      patch.tags = body.tags;
     }
     if (body.status !== undefined && body.status !== existing.status) {
       before.status = existing.status;

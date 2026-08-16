@@ -11,7 +11,6 @@ export interface DocumentCardProps {
   onOpen: (document: DocumentSummary) => void;
   onValidate?: (document: DocumentSummary) => Promise<void> | void;
   onReject?: (document: DocumentSummary) => Promise<void> | void;
-  score?: number;
 }
 
 function formatDate(iso: string | undefined): string {
@@ -33,7 +32,7 @@ function fileKindLabel(mimeType: string): string {
   return "Fichier";
 }
 
-export function DocumentCard({ document, onOpen, onValidate, onReject, score }: DocumentCardProps) {
+export function DocumentCard({ document, onOpen, onValidate, onReject }: DocumentCardProps) {
   const [pendingAction, setPendingAction] = useState<"validate" | "reject" | null>(null);
   const isPending = document.status === "pending_review";
 
@@ -69,19 +68,12 @@ export function DocumentCard({ document, onOpen, onValidate, onReject, score }: 
       }}
       className="flex cursor-pointer flex-col gap-3 rounded-card border border-border bg-surface p-4 text-left transition-colors hover:border-accent/40 hover:bg-surface-hover"
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-text">{document.currentName}</p>
-          <p className="mt-0.5 text-xs text-text-muted">
-            {fileKindLabel(document.mimeType)}
-            {document.documentDate ? ` · ${formatDate(document.documentDate)}` : ""}
-          </p>
-        </div>
-        {typeof score === "number" && (
-          <Badge variant="muted" className="shrink-0">
-            {Math.round(score * 100)}%
-          </Badge>
-        )}
+      <div className="min-w-0">
+        <p className="truncate text-sm font-medium text-text">{document.currentName}</p>
+        <p className="mt-0.5 text-xs text-text-muted">
+          {fileKindLabel(document.mimeType)}
+          {document.documentDate ? ` · ${formatDate(document.documentDate)}` : ""}
+        </p>
       </div>
 
       {document.summary && (
@@ -90,11 +82,6 @@ export function DocumentCard({ document, onOpen, onValidate, onReject, score }: 
 
       <div className="flex flex-wrap items-center gap-1.5">
         <Badge variant="accent">{document.category}</Badge>
-        {document.tags.slice(0, 3).map((tag) => (
-          <Badge key={tag} variant="default">
-            {tag}
-          </Badge>
-        ))}
       </div>
 
       {isPending && (onValidate || onReject) && (

@@ -126,10 +126,6 @@ export default function DashboardPage() {
   }
 
   const isSearchActive = searchResults !== null;
-  const scoreMap = useMemo(() => {
-    if (!searchResults) return {};
-    return Object.fromEntries(searchResults.map((result) => [result.document.id, result.score]));
-  }, [searchResults]);
   const searchDocuments = useMemo(
     () => searchResults?.map((result) => result.document) ?? [],
     [searchResults]
@@ -169,7 +165,6 @@ export default function DashboardPage() {
               <DocumentGrid
                 documents={searchDocuments}
                 onOpen={handleOpen}
-                scores={scoreMap}
                 emptyState={
                   <>
                     <p className="text-sm font-medium text-text">Aucun résultat</p>

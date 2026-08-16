@@ -26,9 +26,9 @@ AI_PROVIDER=mock
 
 Le `MockProvider` (`src/lib/providers/mock.ts`) retourne des valeurs
 déterministes plausibles à partir du nom de fichier — nom suggéré,
-catégorie, tags, résumé, embedding pseudo-aléatoire mais stable. Il
-permet de développer et tester l'ensemble du pipeline (upload,
-extraction, classement, recherche) sans clé API OpenAI et sans coût.
+catégorie, résumé. Il permet de développer et tester l'ensemble du
+pipeline (upload, extraction, classement, recherche) sans clé API
+OpenAI et sans coût.
 
 Le choix du provider peut aussi se faire depuis la page Réglages de
 l'application, sans redémarrage — mais pour du développement local,
@@ -77,9 +77,9 @@ Points d'attention pour un nouveau provider :
 - Ne jamais logger de secret (clé API, token) — voir aussi
   `src/lib/config.ts` qui applique déjà cette règle pour la configuration
   persistée.
-- `embed()` doit retourner un vecteur numérique utilisable par
-  `cosineSimilarity` (`src/lib/search/semantic.ts`) ; la dimension doit
-  être cohérente pour tous les documents d'une même bibliothèque.
+- `AIProvider` n'a qu'une seule méthode, `extractDocument()`. La recherche
+  (`src/lib/search/fuzzy.ts`) ne dépend d'aucun provider — un nouveau
+  provider n'a donc rien à faire pour la recherche.
 
 ## Conventions de code
 

@@ -6,7 +6,6 @@ import { createDocument } from "@/lib/db/documents";
 import { logEvent } from "@/lib/db/events";
 import { saveFile } from "@/lib/storage/files";
 import { extractDocument } from "@/lib/extraction";
-import { getProvider } from "@/lib/providers";
 
 export const runtime = "nodejs";
 
@@ -55,9 +54,7 @@ export async function POST(req: Request): Promise<NextResponse> {
           originalName: fileName,
           currentName: extraction.suggestedName,
           category: extraction.suggestedCategory,
-          tags: extraction.suggestedTags,
           summary: extraction.summary,
-          extractedText: extraction.text,
           filePath,
           mimeType,
           sizeBytes: buffer.byteLength,
@@ -66,16 +63,6 @@ export async function POST(req: Request): Promise<NextResponse> {
           createdAt: now,
           updatedAt: now,
         };
-
-        // L'embedding sert à la recherche sémantique : facultatif, ne doit
-        // jamais faire échouer l'import si le provider est indisponible.
-        try {
-          const provider = await getProvider();
-          const textForEmbedding = extraction.text || extraction.summary || fileName;
-          record.embedding = await provider.embed(textForEmbedding);
-        } catch {
-          // On continue sans embedding : la recherche retombera sur le texte.
-        }
 
         const created = await createDocument(record);
         await logEvent({ documentId: created.id, type: "create", before: null, after: created });

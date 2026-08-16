@@ -5,21 +5,14 @@
 import type { DocumentRecord, DocumentSummary } from "@/lib/types";
 import { readDb, writeDb } from "./store";
 
-/** Retire le texte intégral et l'embedding d'un DocumentRecord. */
-function toSummary(doc: DocumentRecord): DocumentSummary {
-  const { extractedText, embedding, ...summary } = doc;
-  return summary;
-}
-
 /** Liste les documents, éventuellement filtrés par catégorie. */
 export async function listDocuments(opts?: {
   category?: string;
 }): Promise<DocumentSummary[]> {
   const db = await readDb();
-  const filtered = opts?.category
+  return opts?.category
     ? db.documents.filter((doc) => doc.category === opts.category)
     : db.documents;
-  return filtered.map(toSummary);
 }
 
 /** Récupère un document complet par id, ou null s'il n'existe pas. */

@@ -27,15 +27,12 @@ utilisateur, tout tourne en local/self-hosted.
     plus de ~40 caractères, appel texte seul (moins cher) ; sinon, l'appelant
     (`src/lib/extraction`) est responsable de fournir une image de la
     première page en tant que `buffer`/`mimeType: "image/png"` à la place.
-  - `embed(text)` → `embeddings.create` avec le modèle configuré
-    (`text-embedding-3-small` par défaut), retourne `number[]`.
   - Toute erreur API (quota, clé invalide, timeout) doit être catchée et
     relancée comme `Error` avec un message clair et actionnable en français
     (affiché tel quel côté UI).
 - `mock.ts` exporte `class MockProvider implements AIProvider` — ne fait
   aucun appel réseau, retourne des valeurs déterministes plausibles à partir
-  du nom de fichier (utile pour dev/tests/démo sans clé API). `embed` retourne
-  un vecteur pseudo-aléatoire mais déterministe (hash du texte → seed).
+  du nom de fichier (utile pour dev/tests/démo sans clé API).
 - Pour ajouter un provider (Ollama, Anthropic, etc. — voir ROADMAP v2) :
   créer un fichier ici, implémenter `AIProvider`, l'ajouter dans
   `PROVIDERS` (`index.ts`) et dans `listProviders()`. Rien d'autre à changer
@@ -93,13 +90,15 @@ utilisateur, tout tourne en local/self-hosted.
   - Doit être résilient : si le rendu PDF→image échoue, retomber sur le
     texte partiel plutôt que de planter toute la requête.
 
-### `src/lib/search/semantic.ts`
-- `cosineSimilarity(a: number[], b: number[]): number`
-- `searchDocuments(query: string): Promise<SearchResult[]>` — embed la
-  requête via `getProvider()`, calcule la similarité contre tous les
-  documents ayant un `embedding`, trie décroissant, retourne top 20 avec
-  `score`. Fallback si aucun document n'a d'embedding : recherche texte
-  simple (substring, insensible à la casse) sur `currentName` + `summary`.
+### `src/lib/search/fuzzy.ts`
+- `searchDocuments(query: string): Promise<SearchResult[]>` — pas d'IA, pas
+  d'embedding. Score de correspondance floue (mot entier > sous-chaîne >
+  préfixe partagé, tolérant aux formes fléchies/fautes de frappe) sur
+  `currentName`, `category`, `summary`, pondéré par champ. Ne renvoie que les
+  documents avec un score strictement positif (jamais de résultat hors-sujet
+  juste pour remplir la liste), trié décroissant, top 20. `score` ne sert
+  qu'au tri côté serveur — il n'a pas de sens en pourcentage et n'est jamais
+  affiché côté UI.
 
 ## 2. Routes API (`src/app/api/`)
 
@@ -119,7 +118,7 @@ avec un status HTTP approprié (400/404/500), jamais de stack trace brute.
 - `GET /api/documents/categories` — `{ categories: { category, count }[] }`
 - `GET /api/documents/:id` — `{ document: DocumentRecord }` ou 404
 - `PATCH /api/documents/:id` — body `Partial<Pick<DocumentRecord,
-  "currentName"|"category"|"tags"|"status">>` — applique le changement,
+  "currentName"|"category"|"status">>` — applique le changement,
   déplace le fichier physique si `currentName`/`category` changent, logue un
   `DocumentEvent`, retourne `{ document: DocumentRecord }`.
 - `DELETE /api/documents/:id` — déplace le fichier vers la corbeille, logue
@@ -127,6 +126,12 @@ avec un status HTTP approprié (400/404/500), jamais de stack trace brute.
 - `POST /api/documents/:id/undo` — annule le dernier event de ce document
   (restaure `before`, déplace le fichier si besoin), retourne
   `{ document: DocumentRecord }`.
+- `POST /api/documents/:id/reveal` — ouvre le gestionnaire de fichiers du
+  système (Explorateur sur Windows, Finder sur macOS) avec le fichier du
+  document sélectionné, via `child_process`. N'a de sens que si le serveur
+  tourne sur la machine de l'utilisateur (cas d'usage auto-hébergé
+  mono-utilisateur du projet) ; renvoie une erreur explicite sur les
+  plateformes non supportées. Retourne `{ ok: true }`.
 - `GET /api/search?q=...` — `{ results: SearchResult[] }`
 - `GET /api/settings` — `{ config: ProviderConfigPublic }`
 - `POST /api/settings` — body `Partial<ProviderConfig>` — `{ config: ProviderConfigPublic }`

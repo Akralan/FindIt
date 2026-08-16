@@ -17,7 +17,6 @@ const CONFIG_FILE_NAME = "config.local.json";
 const HARD_DEFAULTS: ProviderConfig = {
   provider: "mock",
   openaiModel: "gpt-4o-mini",
-  openaiEmbeddingModel: "text-embedding-3-small",
 };
 
 function resolveDataDir(): string {
@@ -61,9 +60,6 @@ function readEnvConfig(): Partial<ProviderConfig> {
   if (process.env.OPENAI_MODEL) {
     config.openaiModel = process.env.OPENAI_MODEL;
   }
-  if (process.env.OPENAI_EMBEDDING_MODEL) {
-    config.openaiEmbeddingModel = process.env.OPENAI_EMBEDDING_MODEL;
-  }
 
   return config;
 }
@@ -84,8 +80,6 @@ function mergeConfigs(
     provider: merged.provider ?? HARD_DEFAULTS.provider,
     openaiApiKey: merged.openaiApiKey,
     openaiModel: merged.openaiModel ?? HARD_DEFAULTS.openaiModel,
-    openaiEmbeddingModel:
-      merged.openaiEmbeddingModel ?? HARD_DEFAULTS.openaiEmbeddingModel,
   };
 }
 
@@ -122,7 +116,6 @@ export async function getPublicConfig(): Promise<ProviderConfigPublic> {
   return {
     provider: config.provider,
     openaiModel: config.openaiModel,
-    openaiEmbeddingModel: config.openaiEmbeddingModel,
     hasApiKey: Boolean(config.openaiApiKey && config.openaiApiKey.length > 0),
     availableProviders: listProviders(),
   };

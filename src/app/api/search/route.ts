@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { searchDocuments } from "@/lib/search/semantic";
+import { searchDocuments } from "@/lib/search/fuzzy";
 
 export const runtime = "nodejs";
 

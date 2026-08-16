@@ -46,12 +46,12 @@ ou aucun réseau du tout avec le provider `mock` de développement).
   suggérés par l'IA à partir du contenu réel du document.
 - **Prévisualisation et validation manuelle** : chaque document importé
   passe par un état « à valider » avant d'être confirmé, avec possibilité
-  de corriger le nom, la catégorie et les tags.
+  de corriger le nom et la catégorie.
 - **Annulation (undo)** : chaque renommage, déplacement ou modification est
   historisé et peut être annulé.
-- **Recherche en langage naturel** : recherche par similarité sémantique
-  (embeddings) sur l'ensemble de la bibliothèque, avec repli automatique
-  sur une recherche texte simple si aucun embedding n'est disponible.
+- **Recherche en langage naturel** : correspondance floue sur le nom, la
+  catégorie et le résumé de chaque document — pas d'IA ni d'embedding pour
+  chercher, aucun résultat hors-sujet affiché juste pour remplir la liste.
 
 ## Stack technique
 

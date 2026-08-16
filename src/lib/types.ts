@@ -21,13 +21,10 @@ export interface ExtractInput {
 }
 
 export interface ExtractionResult {
-  /** Texte intégral extrait du document (OCR ou texte natif). */
-  text: string;
   /** Nom de fichier suggéré, avec extension, sans chemin. */
   suggestedName: string;
   /** Catégorie suggérée (nom de dossier), ex: "Factures", "Contrats". */
   suggestedCategory: string;
-  suggestedTags: string[];
   /** Résumé court (1-2 phrases). */
   summary: string;
   /** Date du document si détectée, format ISO (YYYY-MM-DD). */
@@ -38,21 +35,18 @@ export interface AIProvider {
   readonly id: ProviderId;
   readonly label: string;
   extractDocument(input: ExtractInput): Promise<ExtractionResult>;
-  embed(text: string): Promise<number[]>;
 }
 
 export interface ProviderConfig {
   provider: ProviderId;
   openaiApiKey?: string;
   openaiModel?: string;
-  openaiEmbeddingModel?: string;
 }
 
 /** Ce que l'API renvoie pour la config — jamais la clé API en clair. */
 export interface ProviderConfigPublic {
   provider: ProviderId;
   openaiModel?: string;
-  openaiEmbeddingModel?: string;
   hasApiKey: boolean;
   availableProviders: { id: ProviderId; label: string; requiresApiKey: boolean }[];
 }
@@ -68,22 +62,20 @@ export interface DocumentRecord {
   originalName: string;
   currentName: string;
   category: string;
-  tags: string[];
   summary: string;
-  extractedText: string;
   /** Chemin relatif à DATA_DIR/files, ex: "Factures/edf-2026-03.pdf". */
   filePath: string;
   mimeType: string;
   sizeBytes: number;
   documentDate?: string;
   status: DocumentStatus;
-  embedding?: number[];
   createdAt: string;
   updatedAt: string;
 }
 
-/** DocumentRecord sans le texte intégral ni l'embedding — pour les listes. */
-export type DocumentSummary = Omit<DocumentRecord, "extractedText" | "embedding">;
+/** Alias historique : les listes renvoient désormais le même objet complet
+ * (plus aucun champ volumineux — texte intégral ou embedding — à retirer). */
+export type DocumentSummary = DocumentRecord;
 
 export type DocumentEventType = "create" | "rename" | "move" | "edit" | "delete";
 

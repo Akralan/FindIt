@@ -10,7 +10,6 @@ export interface DocumentGridProps {
   onOpen: (document: DocumentSummary) => void;
   onValidate?: (document: DocumentSummary) => Promise<void> | void;
   onReject?: (document: DocumentSummary) => Promise<void> | void;
-  scores?: Record<string, number>;
   emptyState?: ReactNode;
   skeletonCount?: number;
 }
@@ -36,7 +35,6 @@ export function DocumentGrid({
   onOpen,
   onValidate,
   onReject,
-  scores,
   emptyState,
   skeletonCount = 6,
 }: DocumentGridProps) {
@@ -67,7 +65,6 @@ export function DocumentGrid({
           onOpen={onOpen}
           onValidate={onValidate}
           onReject={onReject}
-          score={scores?.[document.id]}
         />
       ))}
     </div>

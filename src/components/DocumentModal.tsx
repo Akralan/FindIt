@@ -42,19 +42,19 @@ function formatBytes(bytes: number): string {
   return `${value.toFixed(1)} ${units[unitIndex]}`;
 }
 
-type Patch = Partial<Pick<DocumentRecord, "currentName" | "category" | "tags" | "status">>;
+type Patch = Partial<Pick<DocumentRecord, "currentName" | "category" | "status">>;
 
 export function DocumentModal({ documentId, onClose, onChanged, onDeleted }: DocumentModalProps) {
   const [document, setDocument] = useState<DocumentRecord | null>(null);
   const [loading, setLoading] = useState(false);
   const [nameInput, setNameInput] = useState("");
   const [categoryInput, setCategoryInput] = useState("");
-  const [tagsInput, setTagsInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [validating, setValidating] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [undoing, setUndoing] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [revealing, setRevealing] = useState(false);
   const { showToast } = useToast();
 
   const isOpen = documentId !== null;
@@ -97,7 +97,6 @@ export function DocumentModal({ documentId, onClose, onChanged, onDeleted }: Doc
     if (document) {
       setNameInput(document.currentName);
       setCategoryInput(document.category);
-      setTagsInput(document.tags.join(", "));
     }
   }, [document]);
 
@@ -106,14 +105,9 @@ export function DocumentModal({ documentId, onClose, onChanged, onDeleted }: Doc
     const patch: Patch = {};
     const trimmedName = nameInput.trim();
     const trimmedCategory = categoryInput.trim();
-    const tags = tagsInput
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter(Boolean);
 
     if (trimmedName && trimmedName !== document.currentName) patch.currentName = trimmedName;
     if (trimmedCategory && trimmedCategory !== document.category) patch.category = trimmedCategory;
-    if (JSON.stringify(tags) !== JSON.stringify(document.tags)) patch.tags = tags;
 
     const finalStatus = explicitStatus ?? document.status;
     if (finalStatus !== document.status) patch.status = finalStatus;
@@ -176,6 +170,21 @@ export function DocumentModal({ documentId, onClose, onChanged, onDeleted }: Doc
     } finally {
       setDeleting(false);
       setConfirmingDelete(false);
+    }
+  }
+
+  async function handleReveal() {
+    if (!document) return;
+    setRevealing(true);
+    try {
+      const res = await fetch(`/api/documents/${document.id}/reveal`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error ?? "Impossible d'ouvrir l'Explorateur.");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Impossible d'ouvrir l'Explorateur.";
+      showToast(message, "error");
+    } finally {
+      setRevealing(false);
     }
   }
 
@@ -282,13 +291,6 @@ export function DocumentModal({ documentId, onClose, onChanged, onDeleted }: Doc
             />
           </div>
 
-          <Input
-            label="Tags"
-            value={tagsInput}
-            onChange={(event) => setTagsInput(event.target.value)}
-            hint="Séparés par des virgules"
-          />
-
           {document.summary && (
             <div>
               <p className="mb-1 text-sm font-medium text-text">Résumé</p>
@@ -296,14 +298,9 @@ export function DocumentModal({ documentId, onClose, onChanged, onDeleted }: Doc
             </div>
           )}
 
-          {document.extractedText && (
-            <div>
-              <p className="mb-1 text-sm font-medium text-text">Texte extrait</p>
-              <div className="max-h-40 overflow-y-auto rounded-card border border-border bg-bg p-3 text-xs text-text-muted">
-                <pre className="whitespace-pre-wrap break-words font-sans">{document.extractedText}</pre>
-              </div>
-            </div>
-          )}
+          <Button variant="secondary" size="sm" isLoading={revealing} onClick={handleReveal}>
+            Ouvrir dans l&apos;Explorateur
+          </Button>
 
           <div className="grid grid-cols-2 gap-3 border-t border-border pt-4 text-xs text-text-muted sm:grid-cols-4">
             <div>
