@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FindIt — Retrouvez n'importe quel document en une phrase.</title>
+  <meta name="description" content="Déposez vos factures, contrats et ordonnances. FindIt les lit, les nomme et les classe pour vous — puis les retrouve quand vous les décrivez avec vos mots." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><rect width=%2216%22 height=%2216%22 rx=%223%22 fill=%22%230A0B0B%22/><rect x=%224%22 y=%224%22 width=%228%22 height=%228%22 rx=%222%22 fill=%22%234C9C81%22/></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page">
+
+    <header class="site-header">
+      <div class="header-inner">
+        <div class="brand">
+          <span class="brand-dot"></span>
+          <span class="brand-name">FindIt</span>
+        </div>
+        <div class="nav">
+          <a href="#comment" class="nav-link">Comment ça marche</a>
+          <a href="#confidentialite" class="nav-link">Confidentialité</a>
+          <a href="#telecharger" class="nav-cta">Télécharger</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="site-main">
+
+      <section id="telecharger" class="hero">
+        <span class="hero-badge">
+          <span class="hero-badge-dot"></span>
+          Gratuit · sans compte · tout reste sur votre machine
+        </span>
+        <h1 class="hero-title">Retrouvez n'importe quel document en une phrase.</h1>
+        <p class="hero-subtitle">Déposez vos factures, contrats et ordonnances. FindIt les lit, les nomme et les classe pour vous — puis les retrouve quand vous les décrivez avec vos mots.</p>
+
+        <div class="hero-ctas">
+          <div class="hero-ctas-row">
+            <a href="#telecharger" class="btn btn-primary js-primary-cta">Télécharger pour</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="mockup-section">
+        <div class="mockup-card">
+          <div class="mockup-titlebar">
+            <span class="mockup-dot"></span>
+            <span class="mockup-dot"></span>
+            <span class="mockup-dot"></span>
+            <span class="mockup-titlebar-text">FindIt — 24 documents</span>
+          </div>
+
+          <div class="mockup-body">
+            <div class="search-block">
+              <p class="search-label">Que cherchez‑vous ?</p>
+              <div class="search-bar">
+                <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true" class="search-icon">
+                  <circle cx="7" cy="7" r="5.2" stroke="currentColor" stroke-width="1.5"></circle>
+                  <path d="M11 11L14.5 14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+                </svg>
+                <span class="search-text js-typed-query"></span>
+                <span class="search-kbd">⌘K</span>
+              </div>
+            </div>
+
+            <div class="doc-list">
+              <div class="doc-item">
+                <div class="doc-info">
+                  <div class="doc-title-row">
+                    <p class="doc-title trunc">Attestation assurance auto — 2026</p>
+                    <span class="doc-badge">Contrats</span>
+                  </div>
+                  <p class="doc-desc trunc">Carte verte valable jusqu'au 31 décembre 2026 — <span class="doc-filename">Scan_20260114_0002.pdf</span></p>
+                </div>
+                <span class="doc-date">14 janv. 2026</span>
+              </div>
+              <div class="doc-item">
+                <div class="doc-info">
+                  <div class="doc-title-row">
+                    <p class="doc-title trunc">Relevé d'information assurance</p>
+                    <span class="doc-badge">Contrats</span>
+                  </div>
+                  <p class="doc-desc trunc">Historique de sinistres, coefficient bonus 0,68.</p>
+                </div>
+                <span class="doc-date">3 déc. 2025</span>
+              </div>
+              <div class="doc-item">
+                <div class="doc-info">
+                  <div class="doc-title-row">
+                    <p class="doc-title trunc">Facture garage — révision</p>
+                    <span class="doc-badge">Factures</span>
+                  </div>
+                  <p class="doc-desc trunc">Entretien 90 000 km, 248,60 €.</p>
+                </div>
+                <span class="doc-date">9 nov. 2025</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="comment" class="how">
+        <div class="how-header">
+          <p class="eyebrow">Comment ça marche</p>
+          <h2 class="how-title">Trois gestes, et vous ne rangez plus rien.</h2>
+        </div>
+        <div class="grid-3">
+          <div class="step-card">
+            <span class="step-num">01</span>
+            <p class="step-title">Déposez</p>
+            <p class="step-desc">Photo, PDF, scan ou capture. Glissez le fichier dans la fenêtre, c'est tout.</p>
+          </div>
+          <div class="step-card">
+            <span class="step-num">02</span>
+            <p class="step-title">FindIt nomme et classe</p>
+            <p class="step-desc">Un titre lisible, une catégorie, un résumé d'une ligne. Vous validez d'un clic.</p>
+          </div>
+          <div class="step-card">
+            <span class="step-num">03</span>
+            <p class="step-title">Retrouvez</p>
+            <p class="step-desc">« bail Lyon », « ordonnance de février » : décrivez, FindIt trouve.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="mobile-section">
+        <div class="mobile-card">
+          <div class="mobile-copy">
+            <p class="eyebrow">Application mobile</p>
+            <h2 class="mobile-title">Vos documents dans la poche, sans rien envoyer dans le cloud.</h2>
+            <p class="mobile-desc">Appairez votre téléphone à votre ordinateur en scannant un QR code. La recherche se fait sur votre PC, chez vous — le téléphone n'affiche que le résultat.</p>
+            <div class="mobile-buttons">
+              <a href="#telecharger" class="btn btn-outline">Google Play</a>
+            </div>
+          </div>
+          <div class="qr-card">
+            <div class="qr-header">
+              <span class="qr-dot"></span>
+              <span class="qr-title">Appairer cet appareil</span>
+            </div>
+            <div class="qr-box">
+              <span class="qr-box-text">qr d'appairage</span>
+            </div>
+            <p class="qr-caption">Valable 60 secondes, sur votre réseau local uniquement.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="confidentialite" class="grid-3 privacy-section">
+        <div class="privacy-item">
+          <p class="privacy-title">Tout reste chez vous</p>
+          <p class="privacy-desc">Les fichiers et l'index vivent dans un dossier de votre ordinateur. Rien n'est téléversé.</p>
+        </div>
+        <div class="privacy-item">
+          <p class="privacy-title">Aucun compte</p>
+          <p class="privacy-desc">Pas d'inscription, pas d'e-mail, pas d'abonnement. Vous téléchargez, vous utilisez.</p>
+        </div>
+        <div class="privacy-item">
+          <p class="privacy-title">Gratuit, pour de bon</p>
+          <p class="privacy-desc">Pas de version « pro », pas de limite de documents, pas de publicité.</p>
+        </div>
+      </section>
+
+      <section class="final-section">
+        <div class="final-card">
+          <h2 class="final-title">Installez-le, déposez trois documents, jugez.</h2>
+          <a href="#telecharger" class="btn btn-primary js-primary-cta">Télécharger pour</a>
+          <div class="platform-row">
+            <p class="platform-note">macOS, iOS et Linux arrivent bientôt</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div class="brand">
+          <span class="footer-dot"></span>
+          <span class="footer-text">FindIt — <span class="js-version-line"></span></span>
+        </div>
+        <div class="footer-links">
+          <a href="#telecharger" class="footer-link">Notes de version</a>
+          <a href="#confidentialite" class="footer-link">Confidentialité</a>
+          <a href="#telecharger" class="footer-link">Code source</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
