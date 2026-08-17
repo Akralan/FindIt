@@ -1,6 +1,11 @@
 import * as SQLite from "expo-sqlite";
 
-import { CREATE_DOCUMENTS_TABLE, CREATE_UPDATED_AT_INDEX } from "./schema";
+import {
+  CREATE_DOCUMENTS_TABLE,
+  CREATE_SEARCH_HISTORY_INDEX,
+  CREATE_SEARCH_HISTORY_TABLE,
+  CREATE_UPDATED_AT_INDEX,
+} from "./schema";
 
 const DATABASE_NAME = "findit.db";
 
@@ -32,6 +37,8 @@ export function initDatabase(): Promise<void> {
       PRAGMA journal_mode = WAL;
       ${CREATE_DOCUMENTS_TABLE}
       ${CREATE_UPDATED_AT_INDEX}
+      ${CREATE_SEARCH_HISTORY_TABLE}
+      ${CREATE_SEARCH_HISTORY_INDEX}
     `);
   }
   return initPromise;

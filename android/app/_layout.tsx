@@ -26,7 +26,7 @@ function RootNavigator() {
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="document/[id]" options={{ title: "Document" }} />
-        <Stack.Screen name="sync" options={{ title: "Synchronisation" }} />
+        <Stack.Screen name="sync-review" options={{ title: "Synchronisation" }} />
         <Stack.Screen name="scan" options={{ title: "Scanner un code", presentation: "modal" }} />
       </Stack>
     </>

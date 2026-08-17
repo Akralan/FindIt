@@ -81,27 +81,127 @@ android/
   app/                      # Routes Expo Router (fichier = écran)
     _layout.tsx             # Stack racine, ThemeProvider, init SQLite
     (tabs)/
-      _layout.tsx            # Tabs Documents / Réglages
-      index.tsx               # Liste + recherche floue + état vide
-      settings.tsx             # Pairing + déclenchement synchro
-    document/[id].tsx        # Détail (métadonnées + image zoomable ou bouton "ouvrir")
-    scan.tsx                  # Scanner QR (modal)
-    sync.tsx                   # Revue du manifeste + sélection + téléchargement
+      _layout.tsx            # Tabs Rechercher / Sync
+      index.tsx               # Recherche en avant + parcours de la bibliothèque locale
+      sync.tsx                  # Statut de pairing (carte connectée ou viseur QR + fallback manuel)
+    document/[id].tsx        # Détail plein écran (métadonnées + image zoomable ou bouton "ouvrir")
+                              # — route conservée mais plus le point d'entrée principal (voir ci-dessous)
+    scan.tsx                  # Scanner QR (modal, inchangé)
+    sync-review.tsx             # Revue du manifeste + sélection + téléchargement
+                                 # (ex-`app/sync.tsx`, renommé — voir "Navigation" ci-dessous)
   src/
-    theme/                   # Tokens de design (palette, radii, spacing, typo)
+    theme/                   # Tokens de design (palette, radii, spacing, typo) + withAlpha.ts
     types/document.ts        # Types partagés, portés du webapp + SYNC_CONTRACTS.md
     search/fuzzy.ts           # Port direct de src/lib/search/fuzzy.ts (webapp)
-    db/                       # SQLite : schéma + CRUD
-    storage/                  # SecureStore (pairing) + FileSystem (fichiers)
+    db/                       # SQLite : schéma + CRUD documents + historique de recherche
+    storage/                  # SecureStore (pairing, dernier index) + FileSystem (fichiers)
     sync/                     # Client HTTP /api/sync/* + calcul de diff
-    hooks/                    # usePairing, useDocuments
-    components/                # Screen, Button, SearchBar, DocumentRow, EmptyState, Chip, Checkbox
-    utils/                     # format.ts (dates/tailles fr-FR), qrPayload.ts (validation QR)
+    hooks/                    # usePairing, useDocuments, useSearchHistory, useOpenLocalFile
+    components/                # Screen, Button, SearchBar, DocumentRow, DocumentSheet, EmptyState,
+                                # Chip, Checkbox, SectionLabel, icons.tsx (SVG)
+    utils/                     # format.ts (dates/tailles/durées fr-FR), qrPayload.ts, deviceLabel.ts
 ```
 
 Tout le code applicatif hors routes vit sous `src/` (convention Expo Router :
 seul `app/` doit contenir des fichiers de route, tout le reste y serait
 interprété comme un écran).
+
+## Navigation à 2 onglets, bottom sheet, historique de recherche (passe du 17/08/2026)
+
+Refonte de l'UI suivant un mockup fourni par l'utilisateur (2 onglets,
+recherche en avant, bottom sheet de détail, écran Sync repensé). Le mockup
+décrivait un modèle "recherche en direct sur le PC, aucun fichier copié" —
+**explicitement écarté** : ce n'est pas notre architecture (voir
+SYNC_CONTRACTS.md et la section "Synchro" plus haut — les documents et leurs
+fichiers sont bien copiés en local, la recherche fonctionne hors connexion
+PC). Tous les textes du mockup qui décrivaient ce mauvais modèle ont été
+réécrits ; toutes les données d'exemple du mockup (nom d'appareil inventé,
+puces de recherche pré-remplies, documents de démo) ont été ignorées au
+profit des vraies données (`usePairing`, `useDocuments`, historique réel).
+
+- **Onglets** : `(tabs)/index.tsx` (Rechercher, loupe) et `(tabs)/sync.tsx`
+  (Sync, icône grille) remplacent Documents/Réglages. `(tabs)/settings.tsx`
+  est supprimé.
+- **Collision de route évitée** : le fichier tab `(tabs)/sync.tsx` se
+  résout à l'URL `/sync` une fois le groupe `(tabs)` retiré par Expo Router
+  — strictement le même chemin que l'ancien `app/sync.tsx` (écran de revue
+  du manifeste). Pour éviter une ambiguïté de routing entre les deux, l'écran
+  de revue/téléchargement (logique inchangée, voir SYNC_CONTRACTS.md) a été
+  renommé `app/sync-review.tsx` (`/sync-review`), poussé depuis le bouton
+  "Actualiser l'index" du nouvel onglet Sync. Toute la logique de
+  téléchargement/diff de cet écran n'a **pas** été touchée, seul le nom de
+  fichier et les références `router.push` ont changé.
+- **Recherche** (`(tabs)/index.tsx`) : barre de recherche en avant (icône
+  loupe SVG, bouton effacer), `FlatList` unique dont les données basculent
+  entre "tous les documents locaux" (état inactif) et les résultats
+  `searchDocuments` (dès qu'une requête est tapée) — pas de liste imbriquée
+  dans un `ScrollView` (anti-pattern RN de listes virtualisées imbriquées).
+  L'état inactif affiche les puces d'historique réel *et*, en dessous, la
+  liste complète de la bibliothèque locale (`SectionLabel` "Tous les
+  documents") : la capacité de parcourir tous les documents sans taper de
+  requête est préservée, intégrée à la même liste plutôt qu'un lien séparé.
+- **Bottom sheet** (`src/components/DocumentSheet.tsx`) : `Modal` natif
+  (`transparent`, `animationType="slide"`) plutôt qu'une lib de bottom sheet
+  tierce (`@gorhom/bottom-sheet` non installée, pas nécessaire pour un sheet
+  statique sans drag-to-dismiss). Remplace la navigation vers
+  `document/[id].tsx` comme point d'entrée principal depuis la recherche.
+  Action principale = "Ouvrir le document" → `openFileExternally` (déjà
+  existant, `src/storage/fileStorage.ts`, réutilisé via le nouveau hook
+  `src/hooks/useOpenLocalFile.ts`), jamais "ouvrir sur le PC". La route
+  `document/[id].tsx` (détail plein écran avec zoom image) reste dans le
+  code, inchangée, mais n'est plus liée depuis l'UI — conservée par prudence
+  (zoom d'image natif que le sheet ne réplique pas) plutôt que supprimée.
+- **Historique de recherche réel** (`src/db/searchHistory.ts` +
+  `src/hooks/useSearchHistory.ts`) : nouvelle table SQLite
+  `search_history` (`CREATE TABLE IF NOT EXISTS`, même doctrine que
+  `documents` — pas de migration formelle pour une table aussi simple).
+  Enregistre uniquement les requêtes réellement tapées et validées
+  (soumission clavier, ou tap sur une puce déjà affichée qui la remonte en
+  tête) ; dédoublonnée insensible à la casse, plafonnée à 8 entrées. Vide au
+  premier lancement — **aucune** suggestion pré-remplie.
+- **Écran Sync** (`(tabs)/sync.tsx`) : état pairé = carte statut (libellé =
+  `pairing.host` réel, jamais un nom d'appareil inventé — voir
+  `src/utils/deviceLabel.ts`), stats réelles (nombre de documents locaux via
+  `useDocuments`, dernier index réel — voir ci-dessous), boutons "Actualiser
+  l'index" (`router.push("/sync-review")`) et "Déconnecter"
+  (`forgetPairing`, avec confirmation). État non pairé = viseur QR décoratif
+  (`View`s superposées, pas de lib de dégradé — `expo-linear-gradient` non
+  installé, simplifié en aplat + fine ligne semi-transparente, voir
+  limitations ci-dessous) + bouton qui demande la permission caméra puis
+  pousse `/scan`, + repli "Saisir le code" : petit formulaire host/port/token
+  local à l'écran (pas de nouvelle route), validé avec les mêmes règles que
+  `parsePairingPayload` avant d'appeler `usePairing().setPairing`.
+- **Dernier index réel** (`src/storage/syncMeta.ts`, `expo-secure-store`,
+  une seule valeur ISO) : écrit par `app/sync-review.tsx` après un
+  téléchargement ayant récupéré au moins un document, lu par l'onglet Sync
+  (`formatRelativeTime`, `src/utils/format.ts`). Si jamais synchronisé,
+  affiche "Jamais" plutôt qu'une valeur inventée.
+- **Icônes SVG** (`src/components/icons.tsx`) : `react-native-svg` n'était
+  **pas** déjà présent dans `node_modules` malgré l'hypothèse de départ
+  (dépendance transitive d'`expo-router`/`react-native-screens`) — ajouté
+  explicitement via `npx expo install react-native-svg` (version alignée
+  SDK 57). Icônes portées telles quelles depuis les tracés SVG du mockup
+  (loupe, grille+flèches de synchro, chevron, coche).
+- **Couleurs** : aucune valeur hex codée en dur dans le nouveau code — tout
+  passe par `src/theme/colors.ts` (déjà identique aux hex du mockup, vérifié
+  token par token) ou par `withAlpha()` (`src/theme/withAlpha.ts`, nouveau)
+  pour les fonds teintés semi-transparents (badges de catégorie, icône de
+  statut connecté), qui prend toujours un token de couleur en entrée.
+
+### Simplifications assumées par rapport au mockup
+
+- Le viseur QR de l'onglet Sync (non pairé) reproduit la structure (coins
+  en accolade, ligne de scan, légende) mais pas la texture de fond en
+  hachures diagonales du mockup (dégradé + `repeating-linear-gradient`,
+  purement décoratif, `expo-linear-gradient` non installé) — remplacée par
+  un aplat `theme.colors.bg`.
+- Les résultats de recherche sont des cartes arrondies individuelles
+  (`DocumentRow`, bordure + radius par ligne) plutôt qu'un unique conteneur
+  bordé avec séparateurs internes 1px comme dans le mockup — plus simple et
+  plus robuste à implémenter avec `FlatList` à l'échelle "centaines de
+  documents" (pas de logique de radius conditionnelle premier/dernier
+  élément), sans changer l'information affichée par ligne (nom, résumé,
+  catégorie, date, chevron).
 
 ## Design — portage des tokens webapp
 
@@ -207,21 +307,27 @@ le pairing vient d'un hotspot ou du wifi partagé habituel (même `host`/
 ## Ce qui est fonctionnel vs. ce qui dépend du serveur PC
 
 **Fonctionnel dès maintenant, sans le serveur** :
-- Scaffold complet, thème clair/sombre, navigation.
-- Écran Documents avec recherche floue locale sur données déjà en base
-  SQLite (une fois qu'il y en a).
-- Écran Réglages : affichage de l'état de pairing, "oublier le pairing".
+- Scaffold complet, thème clair/sombre, navigation à 2 onglets.
+- Onglet Rechercher : recherche floue locale sur données déjà en base
+  SQLite (une fois qu'il y en a), parcours de toute la bibliothèque locale
+  en état inactif, historique de recherche réel persistant (SQLite),
+  bottom sheet de détail, ouverture de fichier local.
+- Onglet Sync : affichage de l'état de pairing (host réel, stats locales
+  réelles), "déconnecter", formulaire de pairing manuel (fallback sans
+  caméra) qui enregistre directement via `usePairing().setPairing` (pas
+  besoin du serveur pour *enregistrer* le pairing, seulement pour la
+  synchro elle-même ensuite).
 - Écran de scan QR : fonctionne dès qu'un QR code valide au format
   `{ host, port, token }` lui est présenté (pas besoin que ce soit le PC —
   n'importe quel QR encodant ce JSON fonctionne pour tester le flux).
-- Écran détail document : fonctionne pour tout document déjà présent en
-  local (mais aucun ne l'est tant qu'aucune synchro n'a réussi — v1 n'a pas
-  de jeu de données de démo, contrairement à v0.1 qui en prévoyait un pour
-  l'écran liste seul).
+- Écran détail document (`document/[id].tsx`, plus lié depuis l'UI
+  principale mais toujours fonctionnel) : fonctionne pour tout document
+  déjà présent en local (mais aucun ne l'est tant qu'aucune synchro n'a
+  réussi — pas de jeu de données de démo).
 
 **Dépend des routes serveur `/api/sync/*` (pas encore livrées par l'autre
 agent au moment de cette tâche)** :
-- Le bouton "Synchroniser" (`app/sync.tsx`) : l'appel `fetchManifest`
+- Le bouton "Actualiser l'index" (`app/sync-review.tsx`, ex-`app/sync.tsx`) : l'appel `fetchManifest`
   échouera (erreur réseau ou 404) tant que
   `GET /api/sync/manifest` n'existe pas côté PC. Le code gère cette erreur
   proprement (message "impossible de joindre l'ordinateur…", bouton
@@ -275,6 +381,20 @@ une fois les deux côtés (PC + mobile) assemblés :
   du wifi par l'utilisateur → retour dans l'app → "J'ai rejoint, continuer"
   → pairing enregistré → synchro fonctionnelle sur l'IP `192.168.137.x` du
   hotspot Windows.
+- **Refonte 2 onglets / bottom sheet / historique (passe du 17/08/2026)** —
+  entièrement non exercée sur device réel, à valider manuellement :
+  rendu visuel effectif (couleurs claires/sombres, espacement, la palette a
+  été vérifiée token par token contre le mockup mais jamais rendue), le
+  `Modal` `animationType="slide"` du bottom sheet (fluidité, comportement du
+  bouton retour Android — `onRequestClose` est câblé sur `Fermer` mais pas
+  testé), le viseur QR décoratif de l'onglet Sync (aspect-ratio, tailles),
+  la `FlatList` de recherche à l'échelle réelle de la bibliothèque
+  (performance, `keyboardShouldPersistTaps`), le clavier et son bouton
+  "Rechercher" déclenchant bien `onSubmitEditing`, le formulaire de
+  pairing manuel (clavier numérique pour le port, retour visuel d'erreur),
+  et les icônes `react-native-svg` nouvellement ajoutées (premier usage de
+  cette lib dans le projet — à confirmer qu'elle s'autolink correctement au
+  prochain build natif, `expo run:android` ou build EAS).
 
 ## Validation effectuée
 
@@ -303,3 +423,21 @@ une fois les deux côtés (PC + mobile) assemblés :
 - `npx expo-doctor` : 21/21 vérifications passées, y compris après l'ajout
   d'`expo-clipboard` (pas d'entrée `plugins` requise dans `app.json` pour
   cette lib).
+
+**Passe du 17/08/2026 (refonte 2 onglets/bottom sheet/historique)** :
+- `npx expo install react-native-svg` : pas déjà présent dans
+  `node_modules` malgré l'hypothèse initiale (dépendance transitive
+  d'`expo-router`/`react-native-screens`) — installé explicitement,
+  13 paquets ajoutés, version alignée SDK 57 par le CLI Expo.
+- `npx tsc --noEmit` (strict, `noUncheckedIndexedAccess` activé) : passe
+  sans erreur après la refonte complète. Un seul point d'attention rencontré
+  et corrigé : `tabBarIcon` d'Expo Router fournit un `color` typé
+  `ColorValue` (`string | OpaqueColorValue`), pas `string` — converti
+  explicitement (`String(color)`) au point d'appel dans
+  `app/(tabs)/_layout.tsx` plutôt que d'élargir le type des props des
+  icônes (nos couleurs de thème sont toujours des chaînes hex simples, la
+  conversion est sans risque).
+- `npx expo-doctor` : 21/21 vérifications passées après l'ajout de
+  `react-native-svg`.
+- Pas d'émulateur/device dans cet environnement pour vérifier le rendu réel
+  — voir la liste détaillée dans "Limites de vérification" ci-dessus.

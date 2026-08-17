@@ -24,3 +24,23 @@ export function truncate(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
   return `${text.slice(0, maxLength - 1).trimEnd()}…`;
 }
+
+/**
+ * Horodatage ISO -> durée relative lisible ("il y a 2 min", "il y a 3 h"…).
+ * `null`/`undefined`/invalide -> "Jamais" (jamais de valeur inventée quand
+ * rien n'a encore été suivi — voir `src/storage/syncMeta.ts`).
+ */
+export function formatRelativeTime(iso: string | null | undefined): string {
+  if (!iso) return "Jamais";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "Jamais";
+
+  const diffMs = Date.now() - date.getTime();
+  const diffMin = Math.round(diffMs / 60000);
+  if (diffMin < 1) return "à l'instant";
+  if (diffMin < 60) return `il y a ${diffMin} min`;
+  const diffH = Math.round(diffMin / 60);
+  if (diffH < 24) return `il y a ${diffH} h`;
+  const diffJ = Math.round(diffH / 24);
+  return `il y a ${diffJ} j`;
+}

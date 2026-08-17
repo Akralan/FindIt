@@ -4,6 +4,8 @@
  * webapp (échelle d'espacement Tailwind par défaut, base 4px).
  */
 
+import { Platform } from "react-native";
+
 export const radii = {
   card: 12,
   cardLg: 16,
@@ -53,3 +55,11 @@ export const typography = {
     bold: "700" as const,
   },
 };
+
+/**
+ * Police à chasse fixe pour les valeurs tabulaires (dates, tailles, ports…),
+ * portée de l'usage `ui-monospace, SFMono-Regular, Menlo, monospace` du
+ * webapp — pas de police custom embarquée (voir ARCHITECTURE.md), on retombe
+ * sur la police à chasse fixe système de chaque plateforme.
+ */
+export const monoFontFamily = Platform.OS === "ios" ? "Menlo" : "monospace";

@@ -2,8 +2,12 @@ import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useTheme } from "@/theme/ThemeProvider";
+import { monoFontFamily } from "@/theme/tokens";
+import { withAlpha } from "@/theme/withAlpha";
 import type { LocalDocument } from "@/types/document";
-import { formatBytes, truncate } from "@/utils/format";
+import { formatDate } from "@/utils/format";
+
+import { ChevronRightIcon } from "./icons";
 
 interface DocumentRowProps {
   document: LocalDocument;
@@ -20,63 +24,73 @@ export function DocumentRow({ document, onPress }: DocumentRowProps) {
         styles.row,
         {
           backgroundColor: pressed ? theme.colors.surfaceHover : theme.colors.surface,
-          borderColor: theme.colors.borderSubtle,
-          borderRadius: theme.radii.card,
-          padding: theme.spacing.lg,
+          borderColor: theme.colors.border,
+          borderRadius: theme.radii.cardLg,
+          paddingHorizontal: theme.spacing.lg,
+          paddingVertical: theme.spacing.md,
           marginBottom: theme.spacing.sm,
         },
       ]}
     >
-      <View style={styles.header}>
+      <View style={styles.textColumn}>
         <Text
           numberOfLines={1}
-          style={{ color: theme.colors.text, fontSize: theme.typography.size.md, fontWeight: theme.typography.weight.semibold, flex: 1 }}
+          style={{ color: theme.colors.text, fontSize: theme.typography.size.base, fontWeight: theme.typography.weight.medium }}
         >
           {document.currentName}
         </Text>
-      </View>
 
-      <View style={[styles.metaRow, { marginTop: theme.spacing.xs }]}>
-        <View
-          style={[
-            styles.categoryBadge,
-            { backgroundColor: theme.colors.surfaceHover, borderRadius: theme.radii.full, paddingHorizontal: theme.spacing.sm },
-          ]}
-        >
-          <Text style={{ color: theme.colors.accent, fontSize: theme.typography.size.xs, fontWeight: theme.typography.weight.medium }}>
-            {document.category}
+        {document.summary.length > 0 && (
+          <Text
+            numberOfLines={1}
+            style={{ color: theme.colors.textMuted, fontSize: theme.typography.size.sm, marginTop: 3 }}
+          >
+            {document.summary}
+          </Text>
+        )}
+
+        <View style={[styles.metaRow, { marginTop: 7 }]}>
+          <View
+            style={{
+              backgroundColor: withAlpha(theme.colors.accent, "1f"),
+              borderRadius: 6,
+              paddingHorizontal: theme.spacing.sm,
+              paddingVertical: 2,
+            }}
+          >
+            <Text style={{ color: theme.colors.accent, fontSize: theme.typography.size.xs }}>{document.category}</Text>
+          </View>
+          <Text
+            style={{
+              color: theme.colors.textFaint,
+              fontSize: 11,
+              marginLeft: theme.spacing.sm,
+              fontFamily: monoFontFamily,
+            }}
+          >
+            {formatDate(document.documentDate)}
           </Text>
         </View>
-        <Text style={{ color: theme.colors.textFaint, fontSize: theme.typography.size.xs, marginLeft: theme.spacing.sm }}>
-          {formatBytes(document.sizeBytes)}
-        </Text>
       </View>
 
-      {document.summary.length > 0 && (
-        <Text
-          numberOfLines={2}
-          style={{ color: theme.colors.textMuted, fontSize: theme.typography.size.sm, marginTop: theme.spacing.xs }}
-        >
-          {truncate(document.summary, 140)}
-        </Text>
-      )}
+      <ChevronRightIcon size={14} color={theme.colors.textFaint} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   row: {
-    borderWidth: 1,
-  },
-  header: {
     flexDirection: "row",
     alignItems: "center",
+    borderWidth: 1,
+  },
+  textColumn: {
+    flex: 1,
+    minWidth: 0,
+    marginRight: 8,
   },
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
-  },
-  categoryBadge: {
-    paddingVertical: 2,
   },
 });

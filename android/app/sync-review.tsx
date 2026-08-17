@@ -10,6 +10,7 @@ import { Screen } from "@/components/Screen";
 import { getLocalUpdatedAtById, upsertLocalDocument } from "@/db/documents";
 import { usePairing } from "@/hooks/usePairing";
 import { downloadDocumentFile, localPathForDocument } from "@/storage/fileStorage";
+import { setLastSyncAt } from "@/storage/syncMeta";
 import { documentFileUrl, fetchManifest, SyncApiError } from "@/sync/api";
 import { computeSyncDiff, type SyncDiffEntry } from "@/sync/diff";
 import { useTheme } from "@/theme/ThemeProvider";
@@ -19,7 +20,7 @@ type LoadState = "loading" | "ready" | "error";
 
 const ALL_CATEGORIES = "__all__";
 
-export default function SyncScreen() {
+export default function SyncReviewScreen() {
   const theme = useTheme();
   const { pairing, isLoading: isPairingLoading } = usePairing();
 
@@ -121,6 +122,11 @@ export default function SyncScreen() {
     setIsDownloading(false);
     setProgress(null);
 
+    if (toDownload.length - failures.length > 0) {
+      // Au moins un document a été effectivement récupéré : c'est un index réel.
+      await setLastSyncAt(new Date().toISOString());
+    }
+
     if (failures.length > 0) {
       Alert.alert(
         "Synchronisation partielle",
@@ -144,8 +150,8 @@ export default function SyncScreen() {
       <Screen>
         <EmptyState
           icon="📱"
-          title="Aucun appareil pairé"
-          message="Scanne d'abord le QR code de pairing depuis l'onglet Réglages."
+          title="Aucun appareil associé"
+          message="Scanne d'abord le QR code de pairing depuis l'onglet Sync."
         />
       </Screen>
     );

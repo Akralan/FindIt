@@ -5,11 +5,12 @@ import { useTheme } from "@/theme/ThemeProvider";
 
 interface ChipProps {
   label: string;
-  selected: boolean;
+  /** Absent pour un chip sans état de sélection (ex. puce d'historique de recherche). */
+  selected?: boolean;
   onPress: () => void;
 }
 
-export function Chip({ label, selected, onPress }: ChipProps) {
+export function Chip({ label, selected = false, onPress }: ChipProps) {
   const theme = useTheme();
 
   return (
