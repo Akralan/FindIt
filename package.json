@@ -4,12 +4,18 @@
   "private": true,
   "description": "Rangez et retrouvez vos documents automatiquement, en langage naturel. Auto-hébergé, provider IA interchangeable.",
   "license": "LicenseRef-PolyForm-Noncommercial-1.0.0",
+  "main": "electron/main.cjs",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "electron:assemble": "node scripts/assemble-standalone.mjs",
+    "electron:icon": "node scripts/generate-placeholder-icon.mjs",
+    "electron:fetch-node": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/fetch-node-runtime.ps1",
+    "electron:dev": "npm run build && npm run electron:assemble && electron .",
+    "electron:pack": "npm run electron:icon && npm run build && npm run electron:assemble && npm run electron:fetch-node && electron-builder --win"
   },
   "dependencies": {
     "@napi-rs/canvas": "0.1.55",
@@ -33,6 +39,8 @@
     "@types/react-dom": "18.3.1",
     "@types/uuid": "9.0.8",
     "autoprefixer": "10.4.20",
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8",
     "eslint": "8.57.1",
     "eslint-config-next": "14.2.16",
     "postcss": "8.4.47",
