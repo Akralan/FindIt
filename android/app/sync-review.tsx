@@ -149,7 +149,7 @@ export default function SyncReviewScreen() {
     return (
       <Screen>
         <EmptyState
-          icon="📱"
+          icon="phone-portrait-outline"
           title="Aucun appareil associé"
           message="Scanne d'abord le QR code de pairing depuis l'onglet Sync."
         />
@@ -160,7 +160,7 @@ export default function SyncReviewScreen() {
   if (loadState === "loading") {
     return (
       <Screen>
-        <EmptyState icon="⏳" title="Connexion au PC…" message="Récupération de la liste des documents disponibles." />
+        <EmptyState icon="hourglass-outline" title="Connexion au PC…" message="Récupération de la liste des documents disponibles." />
       </Screen>
     );
   }
@@ -168,7 +168,7 @@ export default function SyncReviewScreen() {
   if (loadState === "error") {
     return (
       <Screen>
-        <EmptyState icon="⚠️" title="Synchronisation impossible" message={errorMessage ?? "Erreur inconnue."}>
+        <EmptyState icon="alert-circle-outline" title="Synchronisation impossible" message={errorMessage ?? "Erreur inconnue."}>
           <Button label="Réessayer" onPress={loadManifest} />
         </EmptyState>
       </Screen>
@@ -179,7 +179,7 @@ export default function SyncReviewScreen() {
     return (
       <Screen>
         <EmptyState
-          icon="✅"
+          icon="checkmark-circle-outline"
           title="Tout est à jour"
           message="Aucun document nouveau ou modifié à récupérer depuis le PC."
         />

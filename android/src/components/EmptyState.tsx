@@ -1,21 +1,23 @@
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { useTheme } from "@/theme/ThemeProvider";
 
 interface EmptyStateProps {
-  icon?: string;
+  /** Nom d'icône Ionicons — voir https://icons.expo.fyi. Par défaut : icône de document. */
+  icon?: keyof typeof Ionicons.glyphMap;
   title: string;
   message: string;
   children?: React.ReactNode;
 }
 
-export function EmptyState({ icon = "📄", title, message, children }: EmptyStateProps) {
+export function EmptyState({ icon = "document-text-outline", title, message, children }: EmptyStateProps) {
   const theme = useTheme();
 
   return (
     <View style={[styles.container, { padding: theme.spacing.xl }]}>
-      <Text style={styles.icon}>{icon}</Text>
+      <Ionicons name={icon} size={48} color={theme.colors.textMuted} />
       <Text
         style={{
           color: theme.colors.text,
@@ -48,8 +50,5 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-  },
-  icon: {
-    fontSize: 48,
   },
 });

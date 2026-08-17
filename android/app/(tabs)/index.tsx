@@ -64,7 +64,7 @@ export default function SearchScreen() {
         </View>
         {!pairing ? (
           <EmptyState
-            icon="📱"
+            icon="phone-portrait-outline"
             title="Aucun appareil associé"
             message="Scanne le QR code affiché dans l'onglet Sync de l'application PC pour associer ce téléphone, puis synchronise tes documents."
           >
@@ -72,7 +72,7 @@ export default function SearchScreen() {
           </EmptyState>
         ) : (
           <EmptyState
-            icon="🗂️"
+            icon="folder-open-outline"
             title="Aucun document local"
             message="Lance une synchronisation pour copier les documents confirmés du PC sur ce téléphone."
           >

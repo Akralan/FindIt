@@ -49,7 +49,7 @@ export default function RootLayout() {
           {dbState === "error" ? (
             <Screen>
               <EmptyState
-                icon="⚠️"
+                icon="alert-circle-outline"
                 title="Erreur de démarrage"
                 message="Impossible d'initialiser le stockage local. Redémarre l'application."
               />

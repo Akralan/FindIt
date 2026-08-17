@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -37,7 +38,7 @@ export function Checkbox({ checked, onToggle, label, sublabel }: CheckboxProps) 
           },
         ]}
       >
-        {checked && <Text style={{ color: theme.colors.onAccent, fontSize: 12, fontWeight: "700" }}>✓</Text>}
+        {checked && <Ionicons name="checkmark" size={14} color={theme.colors.onAccent} />}
       </View>
       <View style={styles.textContainer}>
         <Text numberOfLines={1} style={{ color: theme.colors.text, fontSize: theme.typography.size.base, fontWeight: theme.typography.weight.medium }}>
