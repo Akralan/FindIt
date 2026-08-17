@@ -1,0 +1,52 @@
+# Config electron-builder — produit l'installeur Windows (NSIS) de FindIt.
+# Lancé via "npm run electron:pack" (voir package.json), après
+# "npm run build" + "npm run electron:assemble" + fetch-node-runtime.ps1.
+#
+# Principe : l'app Electron packagée ne contient QUE la coquille
+# (electron/main.cjs). Le serveur Next standalone et le runtime Node
+# portable sont copiés tels quels en "extraResources" (hors asar, pour
+# rester exécutables/lisibles normalement par un processus enfant).
+
+appId: fr.findit.desktop
+productName: FindIt
+copyright: Copyright © FindIt
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - electron/main.cjs
+  - electron/icon.png
+  - package.json
+  # electron-builder résout par défaut les "dependencies" du package.json
+  # racine (celles de la webapp Next : node-llama-cpp, pdf-parse...) et
+  # copie leur node_modules dans l'app packagée, en plus de la copie déjà
+  # faite telle quelle via extraResources -> app-standalone. electron/
+  # main.cjs n'utilise que des modules Node natifs : aucun besoin d'un
+  # node_modules ici. Exclusion explicite requise (extraMetadata seul ne
+  # suffit pas, il fusionne avec le package.json plutôt que le remplacer).
+  - "!node_modules"
+  - "!node_modules/**"
+npmRebuild: false
+
+extraResources:
+  - from: .next/standalone
+    to: app-standalone
+  - from: electron/vendor/node-win-x64
+    to: node-runtime
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: electron/icon.png
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  artifactName: "FindIt-Setup-${version}.${ext}"

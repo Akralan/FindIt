@@ -4,6 +4,11 @@ out/
 build/
 dist/
 
+# Packaging Electron : artefacts générés, pas du code source.
+electron/vendor/
+electron/icon.png
+release/
+
 # Données utilisateur — ne doivent jamais être commit ni publiées
 data/files/**
 data/trash/**
