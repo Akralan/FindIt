@@ -7,10 +7,12 @@ dist/
 # Données utilisateur — ne doivent jamais être commit ni publiées
 data/files/**
 data/trash/**
+data/models/**
 data/db.json
 data/config.local.json
 !data/files/.gitkeep
 !data/trash/.gitkeep
+!data/models/.gitkeep
 
 .env
 .env.local

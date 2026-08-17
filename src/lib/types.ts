@@ -10,7 +10,7 @@
 // Rien d'autre dans l'app ne dépend d'un provider en particulier.
 // ---------------------------------------------------------------------------
 
-export type ProviderId = "openai" | "mock";
+export type ProviderId = "openai" | "local" | "mock";
 
 export interface ExtractInput {
   buffer: Buffer;
@@ -49,6 +49,27 @@ export interface ProviderConfigPublic {
   openaiModel?: string;
   hasApiKey: boolean;
   availableProviders: { id: ProviderId; label: string; requiresApiKey: boolean }[];
+}
+
+// ---------------------------------------------------------------------------
+// Modèle local (provider `local`) — voir src/lib/models/. Indépendant de
+// ProviderConfig : c'est un état de cache disque, pas un réglage utilisateur.
+// Exposé par GET /api/models/local/status (pollé pendant le téléchargement).
+// ---------------------------------------------------------------------------
+
+export type LocalModelDownloadState = "not_downloaded" | "downloading" | "ready" | "error";
+
+export interface LocalModelStatus {
+  state: LocalModelDownloadState;
+  /** Nom affichable du modèle actif (ex: "Qwen2.5 1.5B Instruct (Q4_K_M)"). */
+  label: string;
+  /** Taille approximative attendue, en octets (connue avant même le début du téléchargement). */
+  approxSizeBytes: number;
+  /** Présents seulement quand `state === "downloading"`. */
+  downloadedBytes?: number;
+  totalBytes?: number;
+  /** Présent seulement quand `state === "error"`. */
+  error?: string;
 }
 
 // ---------------------------------------------------------------------------

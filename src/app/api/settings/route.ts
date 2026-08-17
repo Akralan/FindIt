@@ -11,7 +11,7 @@ function errorMessage(err: unknown): string {
 }
 
 function isProviderId(value: unknown): value is ProviderId {
-  return value === "openai" || value === "mock";
+  return value === "openai" || value === "local" || value === "mock";
 }
 
 function isValidConfigPatch(body: unknown): body is Partial<ProviderConfig> {
