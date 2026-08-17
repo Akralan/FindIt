@@ -167,7 +167,11 @@ export async function startHotspotElevated(): Promise<HotspotCredentials> {
         "Le point d'accès n'a pas démarré — l'invite Windows a peut-être été refusée."
       );
     }
-    const parsed = JSON.parse(raw) as { ok: boolean; error: string | null };
+    // `Set-Content -Encoding UTF8` de PowerShell préfixe toujours un BOM
+    // (U+FEFF), y compris sur PowerShell 7+ — sans ce retrait, JSON.parse
+    // échoue sur le premier caractère.
+    const withoutBom = raw.charCodeAt(0) === 0xfeff ? raw.slice(1) : raw;
+    const parsed = JSON.parse(withoutBom) as { ok: boolean; error: string | null };
     if (!parsed.ok) {
       throw new Error(parsed.error || "Échec du démarrage du point d'accès mobile.");
     }
