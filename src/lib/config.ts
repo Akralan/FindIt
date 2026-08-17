@@ -29,7 +29,7 @@ function resolveConfigFilePath(): string {
 }
 
 function isProviderId(value: string): value is ProviderConfig["provider"] {
-  return value === "openai" || value === "mock";
+  return value === "openai" || value === "local" || value === "mock";
 }
 
 /** Lit data/config.local.json. Retourne {} si absent ou illisible/corrompu. */

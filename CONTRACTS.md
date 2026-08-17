@@ -14,15 +14,18 @@ utilisateur, tout tourne en local/self-hosted.
 ### `src/lib/providers/`
 - `index.ts` exporte `getProvider(): Promise<AIProvider>` — lit la config
   active (via `src/lib/config.ts`) et instancie le bon provider.
-  Exporte aussi `listProviders(): { id, label, requiresApiKey }[]`.
+  Exporte aussi `listProviders(): { id, label, requiresApiKey }[]`, qui
+  filtre volontairement `mock` (jamais proposé dans l'UI, seulement via
+  `AI_PROVIDER=mock`).
+- `shared.ts` exporte `EXTRACTION_SYSTEM_PROMPT`, `TEXT_HINT_MIN_LENGTH` et
+  `parseExtractionResult(content, providerLabel)` — communs à `openai.ts`
+  et `local.ts`, aucune dépendance réseau/SDK.
 - `openai.ts` exporte `class OpenAIProvider implements AIProvider`. Utilise
   le SDK `openai` officiel. `extractDocument` :
   - si `mimeType` commence par `image/` → appel vision (chat.completions,
     message avec `image_url` en data URL base64) avec `response_format:
-    { type: "json_schema", ... }` (ou `json_object` si json_schema pose
-    souci) pour forcer une sortie JSON strictement conforme à
-    `ExtractionResult` (sans `text`, généré séparément si besoin — en
-    pratique le modèle peut renvoyer `text` = sa lecture OCR).
+    { type: "json_object" }` pour forcer une sortie JSON conforme à
+    `ExtractionResult`.
   - si `mimeType === "application/pdf"` → si `textHint` est fourni et fait
     plus de ~40 caractères, appel texte seul (moins cher) ; sinon, l'appelant
     (`src/lib/extraction`) est responsable de fournir une image de la
@@ -30,13 +33,51 @@ utilisateur, tout tourne en local/self-hosted.
   - Toute erreur API (quota, clé invalide, timeout) doit être catchée et
     relancée comme `Error` avec un message clair et actionnable en français
     (affiché tel quel côté UI).
+- `local.ts` exporte `class LocalProvider implements AIProvider` — 100 %
+  local, aucun appel réseau après le téléchargement initial du modèle (voir
+  `src/lib/models/`). Utilise `node-llama-cpp` (llama.cpp embarqué dans le
+  process, importé dynamiquement) avec le modèle du registre
+  (`src/lib/models/registry.ts`) et une grammaire JSON (GBNF, via
+  `llama.createGrammarForJsonSchema`) qui force structurellement la sortie
+  à respecter `ExtractionResult` — pas juste un prompt. Pas de modèle
+  vision : `mimeType` commençant par `image/` → OCR local
+  (`src/lib/ocr/`, résultat traité comme texte). PDF/texte natif : même
+  logique de `textHint` que `openai.ts`. Si le modèle n'est pas encore
+  téléchargé, lève une erreur claire renvoyant vers les Réglages.
 - `mock.ts` exporte `class MockProvider implements AIProvider` — ne fait
   aucun appel réseau, retourne des valeurs déterministes plausibles à partir
-  du nom de fichier (utile pour dev/tests/démo sans clé API).
-- Pour ajouter un provider (Ollama, Anthropic, etc. — voir ROADMAP v2) :
-  créer un fichier ici, implémenter `AIProvider`, l'ajouter dans
-  `PROVIDERS` (`index.ts`) et dans `listProviders()`. Rien d'autre à changer
-  dans l'app.
+  du nom de fichier (utile pour dev/tests/démo sans clé API, jamais montré
+  dans l'UI).
+- Pour ajouter un provider (Anthropic, etc.) : créer un fichier ici,
+  implémenter `AIProvider`, l'ajouter dans `ALL_PROVIDERS` (`index.ts`) et
+  dans le `switch` de `getProvider()`. Rien d'autre à changer dans l'app.
+
+### `src/lib/models/` — modèle du provider `local`
+- `registry.ts` exporte `ACTIVE_LOCAL_MODEL: LocalModelInfo` (id, label, uri
+  au format node-llama-cpp `hf:<user>/<repo>/<fichier>`, taille approx.,
+  licence) — LE point à changer pour changer de modèle local par défaut.
+- `manager.ts` exporte `getReadyLocalModelPath(): Promise<string|null>`,
+  `getLocalModelStatus(): Promise<LocalModelStatus>` et
+  `startLocalModelDownload(): Promise<LocalModelStatus>` (idempotent).
+  Statut **persisté sur disque**, jamais en mémoire seule :
+  `data/models/.model-info.json` (chemin exact résolu par le téléchargeur —
+  jamais deviné/reconstruit) une fois prêt, `data/models/.download-status.json`
+  pendant le téléchargement (nettoyé à la fin). Nécessaire car les routes
+  API `download` et `status` peuvent s'exécuter dans des instances de
+  module Next.js distinctes, qui ne partagent pas de variable en mémoire —
+  seul le disque est fiable comme état partagé entre elles (même principe
+  que `data/db.json`).
+- `GET /api/models/local/status` — `{ status: LocalModelStatus }`, pollé
+  par la page Réglages pendant un téléchargement.
+- `POST /api/models/local/download` — déclenche le téléchargement
+  (idempotent), `{ status: LocalModelStatus }`.
+
+### `src/lib/ocr/` — OCR du provider `local`
+- `index.ts` exporte `recognizeText(buffer: Buffer): Promise<string>` via
+  Tesseract.js (wasm, langues fra+eng). Worker réutilisé entre appels
+  (coûteux à créer). Cache des données de langue dans
+  `data/models/tesseract/` après le tout premier téléchargement (seul appel
+  réseau du provider `local`, une fois, indépendant du LLM).
 
 ### `src/lib/config.ts`
 - `getConfig(): Promise<ProviderConfig>` — fusionne dans cet ordre de

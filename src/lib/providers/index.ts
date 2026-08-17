@@ -8,7 +8,10 @@
 import type { AIProvider, ProviderId } from "@/lib/types";
 import { getConfig } from "@/lib/config";
 import { OpenAIProvider } from "@/lib/providers/openai";
+import { LocalProvider } from "@/lib/providers/local";
 import { MockProvider } from "@/lib/providers/mock";
+import { getReadyLocalModelPath } from "@/lib/models/manager";
+import { ACTIVE_LOCAL_MODEL } from "@/lib/models/registry";
 
 interface ProviderMeta {
   id: ProviderId;
@@ -16,13 +19,19 @@ interface ProviderMeta {
   requiresApiKey: boolean;
 }
 
-const PROVIDERS: ProviderMeta[] = [
+/**
+ * Tous les providers connus par l'app, y compris `mock` (dev/tests/CI,
+ * activable uniquement via `AI_PROVIDER=mock` — jamais proposé au client).
+ */
+const ALL_PROVIDERS: ProviderMeta[] = [
   { id: "openai", label: "OpenAI", requiresApiKey: true },
+  { id: "local", label: `Local (${ACTIVE_LOCAL_MODEL.label})`, requiresApiKey: false },
   { id: "mock", label: "Mock (aucun appel réseau, données de démonstration)", requiresApiKey: false },
 ];
 
+/** Providers proposés dans l'UI (Réglages) : `mock` en est volontairement exclu. */
 export function listProviders(): ProviderMeta[] {
-  return PROVIDERS;
+  return ALL_PROVIDERS.filter((p) => p.id !== "mock");
 }
 
 export async function getProvider(): Promise<AIProvider> {
@@ -32,13 +41,22 @@ export async function getProvider(): Promise<AIProvider> {
     case "openai": {
       if (!config.openaiApiKey) {
         throw new Error(
-          "Aucune clé API OpenAI configurée. Ajoutez-en une dans les Réglages, ou choisissez le provider Mock pour tester sans clé."
+          "Aucune clé API OpenAI configurée. Ajoutez-en une dans les Réglages, ou choisissez le provider Local pour tester sans clé."
         );
       }
       return new OpenAIProvider({
         apiKey: config.openaiApiKey,
         model: config.openaiModel,
       });
+    }
+    case "local": {
+      const modelPath = await getReadyLocalModelPath();
+      if (!modelPath) {
+        throw new Error(
+          "Aucun modèle local téléchargé. Allez dans Réglages pour lancer le téléchargement, ou choisissez OpenAI en attendant."
+        );
+      }
+      return new LocalProvider();
     }
     case "mock":
       return new MockProvider();

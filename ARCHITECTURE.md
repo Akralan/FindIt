@@ -126,27 +126,50 @@ interface AIProvider {
   configuration active (`src/lib/config.ts` — fusion `data/config.local.json`
   > variables d'environnement > défauts) et instancie le bon provider. Le
   reste de l'application n'appelle jamais un provider concret directement.
+  Expose aussi `listProviders()`, qui filtre volontairement `mock` de la
+  liste proposée côté UI (Réglages) — `mock` reste activable en interne via
+  `AI_PROVIDER=mock` (dev/tests/CI) mais n'est jamais montré au client.
+- `src/lib/providers/shared.ts` — prompt d'extraction et parsing/validation
+  du JSON renvoyé par le modèle, factorisés car communs à `openai.ts` et
+  `local.ts` (aucun SDK, aucune dépendance réseau ici).
 - `src/lib/providers/openai.ts` implémente `AIProvider` avec le SDK
   officiel `openai` : extraction par vision pour les images et PDF
   scannés, extraction texte pour le texte natif.
+- `src/lib/providers/local.ts` implémente `AIProvider` en **100 % local** :
+  llama.cpp embarqué dans le process (`node-llama-cpp`, importé
+  dynamiquement pour ne charger ses bindings natifs qu'à l'usage réel),
+  petit modèle instruct texte (registre : `src/lib/models/registry.ts`,
+  Qwen2.5 1.5B Instruct par défaut — swappable sans toucher le reste de
+  l'app), sortie JSON contrainte par grammaire GBNF (garantie structurelle,
+  pas juste un prompt). Pas de modèle vision : les images/scans passent par
+  de l'OCR local (`src/lib/ocr/`, Tesseract.js/wasm) avant d'être soumis au
+  LLM comme texte. `src/lib/models/manager.ts` gère le téléchargement du
+  modèle (déclenché depuis les Réglages, une fois) et son statut, persistés
+  sur disque (`data/models/.model-info.json`,
+  `data/models/.download-status.json`) plutôt qu'en mémoire — nécessaire
+  car les routes API `GET`/`POST /api/models/local/*` peuvent s'exécuter
+  dans des instances de module Next.js distinctes, qui ne partagent pas de
+  variable en mémoire entre elles.
 - `src/lib/providers/mock.ts` implémente `AIProvider` sans aucun appel
   réseau, avec des valeurs déterministes dérivées du nom de fichier —
   utilisé en développement (`AI_PROVIDER=mock`) et pour les démonstrations
-  sans clé API.
+  sans clé API, jamais proposé dans les Réglages.
 
 Ce découplage a deux effets structurants :
 
 1. **Aucun module d'orchestration** (`src/lib/extraction`,
    `src/lib/search`) ni aucune route API ne connaît le provider actif. Ils
    appellent `getProvider()` et travaillent uniquement sur l'interface
-   `AIProvider`.
+   `AIProvider` — `extraction/index.ts` ignore par exemple totalement que
+   le provider `local` fait de l'OCR en interne sur les images : il lui
+   passe juste un buffer et un mimeType, comme aux autres providers.
 2. **Ajouter un provider n'exige de toucher qu'un seul fichier** dans
    `src/lib/providers/`, plus son enregistrement dans `index.ts` — voir
-   [CONTRIBUTING.md](./CONTRIBUTING.md). C'est le mécanisme par lequel la
-   [ROADMAP.md](./ROADMAP.md) (v2) prévoit d'introduire un provider
-   **100 % local** (Ollama, llama.cpp, OCR local) sans réécrire le reste
-   de l'application — tenant ainsi, en différé, la promesse de traitement
-   local du document de cadrage initial.
+   [CONTRIBUTING.md](./CONTRIBUTING.md). C'est ce mécanisme qui a permis
+   d'introduire le provider **100 % local** ci-dessus (prévu par la
+   [ROADMAP.md](./ROADMAP.md) v2) sans réécrire le reste de l'application —
+   tenant ainsi la promesse de traitement local du document de cadrage
+   initial.
 
 Le changement de provider actif se fait depuis la page Réglages de
 l'application (`GET`/`POST /api/settings`), sans redémarrage ni
