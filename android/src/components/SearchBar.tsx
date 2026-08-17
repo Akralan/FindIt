@@ -1,5 +1,6 @@
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, TextInput, View } from "react-native";
 
 import { useTheme } from "@/theme/ThemeProvider";
 
@@ -46,7 +47,7 @@ export function SearchBar({ value, onChangeText, onSubmit, placeholder = "Recher
       />
       {value.length > 0 && (
         <Pressable onPress={() => onChangeText("")} hitSlop={8} accessibilityLabel="Effacer" style={styles.clearButton}>
-          <Text style={{ color: theme.colors.textMuted, fontSize: theme.typography.size.md }}>✕</Text>
+          <Ionicons name="close" size={theme.typography.size.md} color={theme.colors.textMuted} />
         </Pressable>
       )}
     </View>

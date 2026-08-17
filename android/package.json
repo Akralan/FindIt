@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "main": "expo-router/entry",
   "dependencies": {
+    "@expo/vector-icons": "^15.1.1",
     "expo": "~57.0.13",
     "expo-camera": "~57.0.3",
     "expo-clipboard": "~57.0.1",

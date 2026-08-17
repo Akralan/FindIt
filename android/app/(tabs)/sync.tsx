@@ -1,7 +1,7 @@
 import { useCameraPermissions } from "expo-camera";
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useState } from "react";
-import { Alert, ScrollView, Text, TextInput, View, type TextInputProps } from "react-native";
+import { Alert, ScrollView, Text, View } from "react-native";
 
 import { Button } from "@/components/Button";
 import { CheckIcon } from "@/components/icons";
@@ -18,16 +18,11 @@ import { formatRelativeTime } from "@/utils/format";
 
 export default function SyncScreen() {
   const theme = useTheme();
-  const { pairing, isLoading: isPairingLoading, setPairing, forgetPairing } = usePairing();
+  const { pairing, isLoading: isPairingLoading, forgetPairing } = usePairing();
   const { documents, refresh: refreshDocuments } = useDocuments();
   const [permission, requestPermission] = useCameraPermissions();
 
   const [lastSyncAt, setLastSyncAtState] = useState<string | null>(null);
-  const [showManualForm, setShowManualForm] = useState(false);
-  const [manualHost, setManualHost] = useState("");
-  const [manualPort, setManualPort] = useState("3000");
-  const [manualToken, setManualToken] = useState("");
-  const [isSavingManual, setIsSavingManual] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -53,28 +48,6 @@ export default function SyncScreen() {
       if (!result.granted) return;
     }
     router.push("/scan");
-  }
-
-  async function submitManualPairing() {
-    const host = manualHost.trim();
-    const port = Number.parseInt(manualPort.trim(), 10);
-    const token = manualToken.trim();
-
-    if (host.length === 0 || !Number.isFinite(port) || port <= 0 || token.length === 0) {
-      Alert.alert("Champs invalides", "Renseigne l'adresse IP, le port et le jeton affichés sur le PC.");
-      return;
-    }
-
-    setIsSavingManual(true);
-    try {
-      await setPairing({ host, port, token });
-      setShowManualForm(false);
-      setManualHost("");
-      setManualPort("3000");
-      setManualToken("");
-    } finally {
-      setIsSavingManual(false);
-    }
   }
 
   return (
@@ -109,20 +82,7 @@ export default function SyncScreen() {
             onDisconnect={confirmForget}
           />
         ) : (
-          <UnpairedPanel
-            onScanPress={handleScanPress}
-            hasPermission={permission?.granted ?? false}
-            showManualForm={showManualForm}
-            onToggleManualForm={() => setShowManualForm((visible) => !visible)}
-            manualHost={manualHost}
-            manualPort={manualPort}
-            manualToken={manualToken}
-            onChangeHost={setManualHost}
-            onChangePort={setManualPort}
-            onChangeToken={setManualToken}
-            onSubmitManual={submitManualPairing}
-            isSavingManual={isSavingManual}
-          />
+          <UnpairedPanel onScanPress={handleScanPress} hasPermission={permission?.granted ?? false} />
         )}
 
         <Text
@@ -226,32 +186,9 @@ function Stat({ label, value }: { label: string; value: string }) {
 interface UnpairedPanelProps {
   onScanPress: () => void;
   hasPermission: boolean;
-  showManualForm: boolean;
-  onToggleManualForm: () => void;
-  manualHost: string;
-  manualPort: string;
-  manualToken: string;
-  onChangeHost: (value: string) => void;
-  onChangePort: (value: string) => void;
-  onChangeToken: (value: string) => void;
-  onSubmitManual: () => void;
-  isSavingManual: boolean;
 }
 
-function UnpairedPanel({
-  onScanPress,
-  hasPermission,
-  showManualForm,
-  onToggleManualForm,
-  manualHost,
-  manualPort,
-  manualToken,
-  onChangeHost,
-  onChangePort,
-  onChangeToken,
-  onSubmitManual,
-  isSavingManual,
-}: UnpairedPanelProps) {
+function UnpairedPanel({ onScanPress, hasPermission }: UnpairedPanelProps) {
   const theme = useTheme();
 
   return (
@@ -277,76 +214,6 @@ function UnpairedPanel({
       </View>
 
       <Button label={hasPermission ? "Scanner le QR code" : "Autoriser l'appareil photo"} onPress={onScanPress} />
-
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: theme.spacing.sm,
-          backgroundColor: theme.colors.surface,
-          borderColor: theme.colors.borderSubtle,
-          borderWidth: 1,
-          borderRadius: theme.radii.card,
-          padding: theme.spacing.md,
-        }}
-      >
-        <Text style={{ color: theme.colors.textMuted, fontSize: theme.typography.size.sm, flex: 1 }}>Pas de caméra ?</Text>
-        <Button label="Saisir le code" variant="secondary" onPress={onToggleManualForm} />
-      </View>
-
-      {showManualForm && (
-        <View style={{ gap: theme.spacing.sm }}>
-          <LabeledInput
-            label="Adresse IP du PC"
-            value={manualHost}
-            onChangeText={onChangeHost}
-            placeholder="192.168.1.23"
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          <LabeledInput
-            label="Port"
-            value={manualPort}
-            onChangeText={onChangePort}
-            placeholder="3000"
-            keyboardType="number-pad"
-          />
-          <LabeledInput
-            label="Jeton"
-            value={manualToken}
-            onChangeText={onChangeToken}
-            placeholder="Jeton affiché sur le PC"
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          <Button label="Associer" onPress={onSubmitManual} loading={isSavingManual} />
-        </View>
-      )}
-    </View>
-  );
-}
-
-function LabeledInput({ label, ...inputProps }: { label: string } & TextInputProps) {
-  const theme = useTheme();
-  return (
-    <View>
-      <Text style={{ color: theme.colors.textMuted, fontSize: theme.typography.size.xs, marginBottom: theme.spacing.xs }}>
-        {label}
-      </Text>
-      <TextInput
-        {...inputProps}
-        placeholderTextColor={theme.colors.textFaint}
-        style={{
-          color: theme.colors.text,
-          fontSize: theme.typography.size.base,
-          backgroundColor: theme.colors.surface,
-          borderColor: theme.colors.border,
-          borderWidth: 1,
-          borderRadius: theme.radii.card,
-          paddingHorizontal: theme.spacing.md,
-          paddingVertical: theme.spacing.sm,
-        }}
-      />
     </View>
   );
 }

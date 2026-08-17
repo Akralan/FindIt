@@ -29,7 +29,7 @@ export default function DocumentDetailScreen() {
   if (doc === null) {
     return (
       <Screen>
-        <EmptyState icon="❓" title="Document introuvable" message="Ce document n'existe plus en local." />
+        <EmptyState icon="help-circle-outline" title="Document introuvable" message="Ce document n'existe plus en local." />
       </Screen>
     );
   }
