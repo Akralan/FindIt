@@ -202,6 +202,14 @@ a:hover {
   color: #08110D;
 }
 
+.btn-primary.btn-disabled,
+.btn-primary.btn-disabled:hover {
+  background: #171918;
+  color: #74807A;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
 .btn-outline {
   height: 44px;
   padding: 0 20px;
