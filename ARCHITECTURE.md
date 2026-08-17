@@ -151,3 +151,72 @@ Ce découplage a deux effets structurants :
 Le changement de provider actif se fait depuis la page Réglages de
 l'application (`GET`/`POST /api/settings`), sans redémarrage ni
 modification de code.
+
+## Synchro avec l'appli mobile (`src/lib/sync/`)
+
+Ajouté pour permettre à l'appli mobile (`android/`, voir son propre
+`ARCHITECTURE.md`) de récupérer une copie locale des documents. Le contrat
+complet (formats, routes, pairing) est dans
+[SYNC_CONTRACTS.md](./SYNC_CONTRACTS.md) — cette section résume comment
+c'est branché côté PC.
+
+- **`src/lib/sync/token.ts`** — génère et persiste un jeton d'appairage
+  (`data/config.local.json`, champ `syncToken`), régénérable depuis les
+  Réglages (invalide tout appareil déjà pairé).
+- **`src/lib/sync/network.ts`** — détecte l'IP locale et le port du
+  serveur, utilisés pour construire le QR code de pairing.
+- **`src/lib/sync/auth.ts`** — vérifie le header `Authorization: Bearer
+  <token>` sur les routes `/api/sync/*` uniquement ; le reste de l'API
+  (usage PC seul) reste sans authentification.
+- **`src/lib/sync/pairing.ts`** — construit le payload JSON encodé dans le
+  QR (`buildPairingInfo`), avec ou sans les identifiants du point d'accès
+  mobile (mode hotspot, voir plus bas).
+- **Routes** `GET /api/sync/manifest`, `GET
+  /api/sync/documents/:id/file`, `POST /api/sync/receive` (voir
+  CONTRACTS.md pour le détail) — réutilisent `src/lib/db/documents.ts` et
+  `src/lib/storage/files.ts` existants, aucune duplication de la logique de
+  documents.
+
+### Pare-feu Windows en un clic (`src/lib/sync/firewall.ts`)
+
+Le processus Next.js tourne sans droits admin. Ouvrir un port dans le
+pare-feu Windows en demande. Plutôt que d'exiger que l'utilisateur ouvre
+PowerShell lui-même (inenvisageable pour un client final), le bouton
+« Autoriser dans le pare-feu Windows » des Réglages déclenche le popup UAC
+natif de Windows (`Start-Process -Verb RunAs`) — l'utilisateur voit
+exactement ce qui va se passer et clique lui-même Oui/Non. Jamais de
+modification silencieuse. La règle couvre tous les profils réseau
+(Domain/Private/Public), pas seulement Privé, car l'interface créée par le
+point d'accès mobile (ci-dessous) n'est pas garantie d'être classée Privé
+par Windows.
+
+**Piège rencontré en pratique** : Windows peut avoir sa propre règle
+générique de blocage pour un exécutable (ex. « Node.js JavaScript
+Runtime », Bloquer, tout port) qui prend le pas sur nos règles spécifiques
+au port 3000, quelle que soit leur configuration — à vérifier
+(`Get-NetFirewallRule -Direction Inbound -Action Block`) si la synchro
+échoue malgré une règle FindIt correctement créée.
+
+### Mode point d'accès mobile (`src/lib/sync/hotspot.ts`)
+
+Repli quand le wifi partagé isole les appareils entre eux (« AP/client
+isolation », fréquent sur certains routeurs — un appareil peut alors
+joindre la passerelle mais pas les autres appareils du même wifi, sans
+qu'aucune configuration côté PC ou téléphone ne puisse le contourner). Le
+PC démarre son propre point d'accès Wi-Fi (Point d'accès mobile Windows) :
+il n'y a alors plus de routeur tiers dans l'équation, donc plus
+d'isolation possible. Le protocole de synchro ne change pas — seule
+l'adresse à laquelle on le joint change (`192.168.137.1`, adresse fixe de
+l'Internet Connection Sharing de Windows).
+
+Mécanisme technique : l'API nécessaire (`Windows.Networking.NetworkOperators.
+NetworkOperatorTetheringManager`) n'existe qu'en WinRT, pas en Node —
+`hotspot.ts` génère des scripts PowerShell écrits sur disque puis exécutés
+(jamais de commande inline), avec le même principe d'élévation UAC
+explicite que le pare-feu pour démarrer/arrêter le point d'accès. Lire son
+statut ne modifie rien et ne demande pas d'élévation.
+
+**Piège rencontré en pratique** : le script PowerShell élevé communique son
+résultat à Node via un fichier (`Set-Content -Encoding UTF8`), qui préfixe
+toujours un BOM (U+FEFF) — `JSON.parse` côté Node plante dessus si on ne le
+retire pas explicitement avant de parser.

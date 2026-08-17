@@ -53,6 +53,22 @@ ou aucun réseau du tout avec le provider `mock` de développement).
   catégorie et le résumé de chaque document — pas d'IA ni d'embedding pour
   chercher, aucun résultat hors-sujet affiché juste pour remplir la liste.
 
+## Appli mobile (Android)
+
+Un client mobile (Expo/React Native, dossier [`android/`](./android)) permet
+de retrouver ses documents depuis un téléphone, **y compris sans connexion
+au PC** : les documents et leurs fichiers sont réellement copiés sur
+l'appareil (pas une simple consultation en direct), la recherche floue
+tourne en local sur cette copie. La synchro est manuelle et sélective,
+associée au PC via un QR code affiché dans les Réglages du webapp — jamais
+de compte, jamais de serveur tiers, toujours sur le même réseau.
+
+Si le wifi partagé isole les appareils entre eux (fréquent sur certains
+routeurs), un repli permet au PC de créer son propre point d'accès pour la
+durée de la synchro — voir [SYNC_CONTRACTS.md](./SYNC_CONTRACTS.md) et
+[android/ROADMAP.md](./android/ROADMAP.md) pour le détail du protocole et
+l'état d'avancement.
+
 ## Stack technique
 
 - [Next.js 14](https://nextjs.org/) (App Router), TypeScript strict
@@ -104,6 +120,11 @@ page Réglages de l'application, sans redémarrage.
   ajouter un nouveau provider IA
 - [CONTRACTS.md](./CONTRACTS.md) — contrats internes (types, routes API,
   interfaces de modules) à respecter par toute contribution
+- [SYNC_CONTRACTS.md](./SYNC_CONTRACTS.md) — protocole de synchro PC ↔
+  mobile (pairing QR, routes `/api/sync/*`, mode hotspot de repli)
+- [android/ROADMAP.md](./android/ROADMAP.md) et
+  [android/ARCHITECTURE.md](./android/ARCHITECTURE.md) — roadmap et
+  architecture de l'appli mobile
 - [LICENSE](./LICENSE) — texte complet de la licence
 
 ## Licence

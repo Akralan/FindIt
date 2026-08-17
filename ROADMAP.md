@@ -91,9 +91,17 @@ Roadmap détaillée, stack et séquencement dans
 [android/ROADMAP.md](./android/ROADMAP.md) ; protocole de synchro PC ↔
 mobile dans [SYNC_CONTRACTS.md](./SYNC_CONTRACTS.md). Résumé : appli Expo
 (React Native + TypeScript) installable via Play Store, synchro manuelle et
-sélective sur réseau local (pairing QR), v1 en lecture seule (pull), v1.1
-ajoute la capture/l'envoi depuis le téléphone — le PC reste la seule source
-de classification IA.
+sélective sur réseau local (pairing QR), v1.1 ajoutera la capture/l'envoi
+depuis le téléphone — le PC reste la seule source de classification IA.
+
+**État au 17 août 2026** : v1 (pairing + synchro pull + recherche floue
+100 % locale, hors ligne) construite et testée de bout en bout sur un
+appareil réel. Ajout non planifié initialement mais nécessaire en
+pratique : un **mode point d'accès mobile** côté PC, en repli quand le
+wifi partagé isole les appareils entre eux (cas rencontré en test) — voir
+`src/lib/sync/hotspot.ts` et SYNC_CONTRACTS.md §1bis. Ajout aussi d'un
+bouton d'ouverture automatique du pare-feu Windows (popup UAC natif, pas de
+PowerShell manuel demandé à l'utilisateur — voir ARCHITECTURE.md).
 
 ## Ce qui n'est volontairement pas dans le plan
 
